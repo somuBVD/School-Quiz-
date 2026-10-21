@@ -507,33 +507,33 @@ fun StudentProfileScreen(
                                 }
                             }
                         }
+                    }
 
-                        // Register Another Student Quick Action Button
-                        OutlinedButton(
-                            onClick = {
-                                viewModel.signOutFromApp()
-                                Toast.makeText(context, "Switching to Student Registration (ಹೊಸ ವಿದ್ಯಾರ್ಥಿ ನೋಂದಣಿ)", Toast.LENGTH_SHORT).show()
-                            },
-                            shape = RoundedCornerShape(10.dp),
-                            border = BorderStroke(1.dp, Color(0xFF4F46E5)),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("profile_register_another_student_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PersonAdd,
-                                contentDescription = null,
-                                tint = Color(0xFF4F46E5),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "➕ Register Another Student (ಹೊಸ ವಿದ್ಯಾರ್ಥಿ ನೋಂದಣಿ)",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF4F46E5)
-                            )
-                        }
+                    // Register Another Student Quick Action Button (shifted to its own distinct line in card)
+                    OutlinedButton(
+                        onClick = {
+                            viewModel.signOutFromApp()
+                            Toast.makeText(context, "Switching to Student Registration (ಹೊಸ ವಿದ್ಯಾರ್ಥಿ ನೋಂದಣಿ)", Toast.LENGTH_SHORT).show()
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, Color(0xFF4F46E5)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("profile_register_another_student_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PersonAdd,
+                            contentDescription = null,
+                            tint = Color(0xFF4F46E5),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "➕ Register Another Student (ಹೊಸ ವಿದ್ಯಾರ್ಥಿ ನೋಂದಣಿ)",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF4F46E5)
+                        )
                     }
                 }
             }
