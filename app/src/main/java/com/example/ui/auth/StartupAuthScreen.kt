@@ -27,6 +27,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.painterResource
+import com.example.R
 import com.example.QuizViewModel
 import com.example.auth.AuthUiState
 import com.example.auth.UserRole
@@ -101,16 +103,17 @@ fun StartupAuthScreen(
             // App Brand Logo & Hero Header
             Box(
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(84.dp)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(
-                        Brush.linearGradient(
-                            listOf(primaryIndigo, Color(0xFF7C3AED))
-                        )
-                    ),
+                    .background(Color.White)
+                    .border(BorderStroke(2.dp, primaryIndigo.copy(alpha = 0.2f)), RoundedCornerShape(24.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("🎓", fontSize = 42.sp)
+                Image(
+                    painter = painterResource(id = R.drawable.ic_app_logo_eagle),
+                    contentDescription = "School Quiz Eagle Logo",
+                    modifier = Modifier.size(64.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
