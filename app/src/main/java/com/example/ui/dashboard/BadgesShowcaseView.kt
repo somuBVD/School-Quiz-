@@ -506,7 +506,9 @@ fun BadgeDetailDialog(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = badgeColor
+                            color = badgeColor,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Quiz — ಶಾಲಾ ರಸಪ್ರಶ್ನೆ (Standards 6–10)</title>
+  <meta name="description" content="School Quiz is a modern educational app for Class 6 to 10 students featuring FLN Foundational Competencies, Formula Vault, Certificates, and multi-language support.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-light: #eef2ff;
+      --accent: #10b981;
+      --amber: #f59e0b;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 0 1.25rem 4rem;
+    }
+    header {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 2.5rem 0 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--surface-border);
+    }
+    .logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 800;
+      font-size: 1.35rem;
+      color: #fff;
+    }
+    .logo-icon {
+      font-size: 1.8rem;
+      background: var(--primary);
+      padding: 0.4rem 0.6rem;
+      border-radius: 12px;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-left: 1.5rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover {
+      color: #fff;
+    }
+    .hero {
+      max-width: 880px;
+      margin: 4rem auto 3rem;
+      text-align: center;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(79, 70, 229, 0.15);
+      border: 1px solid rgba(79, 70, 229, 0.4);
+      color: #818cf8;
+      padding: 0.4rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+    h1 {
+      font-size: 2.75rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+      margin-bottom: 1.25rem;
+      background: linear-gradient(to right, #ffffff, #c7d2fe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-sub {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      margin-bottom: 2.25rem;
+      max-width: 680px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      padding: 0.85rem 1.75rem;
+      border-radius: 12px;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: transform 0.2s, background 0.2s;
+      box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      background: #4338ca;
+    }
+    .btn-secondary {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      color: var(--text);
+      box-shadow: none;
+    }
+    .btn-secondary:hover {
+      background: #334155;
+    }
+    .features-grid {
+      max-width: 1080px;
+      margin: 3.5rem auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 20px;
+      padding: 2rem;
+      transition: border-color 0.2s;
+    }
+    .feature-card:hover {
+      border-color: #6366f1;
+    }
+    .feature-icon {
+      font-size: 2.2rem;
+      margin-bottom: 1rem;
+      display: inline-block;
+    }
+    .feature-card h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+    .feature-card p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+    .standards-bar {
+      max-width: 1080px;
+      margin: 4rem auto;
+      background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(16, 185, 129, 0.1));
+      border: 1px solid rgba(79, 70, 229, 0.3);
+      border-radius: 24px;
+      padding: 2.5rem;
+      text-align: center;
+    }
+    .standards-bar h2 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+    }
+    .standards-tags {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+    .std-tag {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      padding: 0.5rem 1.25rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #818cf8;
+    }
+    footer {
+      max-width: 1080px;
+      margin: 5rem auto 0;
+      padding-top: 2rem;
+      border-top: 1px solid var(--surface-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    footer a {
+      color: #818cf8;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo-badge">
+      <span class="logo-icon">🎓</span>
+      <span>School Quiz (ಶಾಲಾ ರಸಪ್ರಶ್ನೆ)</span>
+    </div>
+    <nav class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#standards">Standards</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="pill">
+        <span>🚀 Version 26.0 Released</span>
+        <span>•</span>
+        <span>Google Play Store</span>
+      </div>
+      <h1>Empowering School Learning for Standards 6 to 10</h1>
+      <p class="hero-sub">
+        Comprehensive interactive quizzes in Kannada, English, Mathematics, Science, and Social Studies.
+        Features 300+ FLN foundational competency MCQs, formula vault cheatsheets, verifiable certificates, and cloud synchronization.
+      </p>
+      <div class="hero-actions">
+        <a href="#features" class="btn">Explore Features ↓</a>
+        <a href="privacy.html" class="btn btn-secondary">Privacy & Terms</a>
+      </div>
+    </section>
+
+    <section id="features" class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">📚</span>
+        <h3>FLN Foundational Learning</h3>
+        <p>300 dedicated multiple choice questions tailored for Class 6 to 10 in Kannada Literacy, English Language, and Foundational Numeracy.</p>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🏅</span>
+        <h3>Merit Badges & Scholar Levels</h3>
+        <p>Gamified student progression with XP, study streaks, and badges across Common, Rare, Epic, and Legendary mastery tiers.</p>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">📐</span>
+        <h3>Formula Vault Cheatsheet</h3>
+        <p>Curated repository of essential formulas, geometry theorems, algebraic identities, physics laws, and unit conversions.</p>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🏆</span>
+        <h3>Verifiable Certificates</h3>
+        <p>Earn official Certificate of Excellence credentials with unique verification codes and instant PDF/image export.</p>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">☁️</span>
+        <h3>Dual Offline & Cloud Sync</h3>
+        <p>Full offline Room SQLite persistence seamlessly synchronizing with Firebase Cloud Firestore and Google Sign-In.</p>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🌐</span>
+        <h3>Tri-Lingual Support</h3>
+        <p>Full vernacular and medium support for Kannada (ಕನ್ನಡ), English, and Hindi curriculum standards.</p>
+      </div>
+    </section>
+
+    <section id="standards" class="standards-bar">
+      <h2>Covered Standards & Competitive Streams</h2>
+      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">
+        Aligned with Karnataka State Board, NCERT, and special scholarship & entrance exams.
+      </p>
+      <div class="standards-tags">
+        <span class="std-tag">Class 6 (೬ನೇ ತರಗತಿ)</span>
+        <span class="std-tag">Class 7 (೭ನೇ ತರಗತಿ)</span>
+        <span class="std-tag">Class 8 (೮ನೇ ತರಗತಿ)</span>
+        <span class="std-tag">Class 9 (೯ನೇ ತರಗತಿ)</span>
+        <span class="std-tag">Class 10 / SSLC (೧೦ನೇ ತರಗತಿ)</span>
+        <span class="std-tag">Morarji Desai Entrance</span>
+        <span class="std-tag">NMMS Scholarship</span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div>© 2026 School Quiz. All rights reserved.</div>
+    <div>
+      <a href="privacy.html">Privacy Policy</a>
+      &nbsp;•&nbsp;
+      <a href="terms.html">Terms of Service</a>
+    </div>
+  </footer>
+</body>
+</html>
