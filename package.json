@@ -1,10 +1,10 @@
 {
-  "name": "school-quiz-app",
+  "name": "school-quiz",
   "version": "26.0.0",
   "private": true,
   "description": "School Quiz web landing page, official APK downloads, FLN question bank preview, and documentation for Cloudflare Pages/Workers deployment.",
   "scripts": {
-    "build": "echo 'Static web assets ready in public/'",
+    "build": "mkdir -p dist && cp -r public/* dist/",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {
