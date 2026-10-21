@@ -14,8 +14,8 @@ android {
     applicationId = "com.aistudio.schoolquiz.qyvxrt"
     minSdk = 24
     targetSdk = 36
-    versionCode = 28
-    versionName = "28.0"
+    versionCode = 29
+    versionName = "29.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
