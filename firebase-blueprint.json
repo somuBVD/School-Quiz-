@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "Question": {
+      "title": "Question",
+      "description": "A quiz question supporting single-choice or multiple-choice formats",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "stdId": { "type": "integer" },
+        "subjectId": { "type": "string" },
+        "unitId": { "type": "integer" },
+        "type": { "type": "string" },
+        "questionText": { "type": "string" },
+        "options": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "correctAnswer": { "type": "string" },
+        "explanation": { "type": "string" },
+        "mediaRes": { "type": "string" },
+        "createdAt": { "type": "integer" }
+      },
+      "required": ["id", "questionText", "correctAnswer"]
+    },
+    "QuizResult": {
+      "title": "QuizResult",
+      "description": "User quiz session completion result",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "unitId": { "type": "integer" },
+        "score": { "type": "integer" },
+        "accuracy": { "type": "integer" },
+        "timestamp": { "type": "integer" }
+      },
+      "required": ["userId", "score"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Student user profile and progress records",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "nickname": { "type": "string" },
+        "standard": { "type": "integer" },
+        "coins": { "type": "integer" },
+        "stars": { "type": "integer" },
+        "xp": { "type": "integer" },
+        "avatar": { "type": "string" },
+        "attendanceStreak": { "type": "integer" },
+        "lastSyncedAt": { "type": "integer" }
+      },
+      "required": ["name", "standard"]
+    }
+  },
+  "firestore": {
+    "/questions/{questionId}": {
+      "schema": "Question",
+      "description": "Central collection of quiz questions"
+    },
+    "/users/{userId}/quiz_results/{resultId}": {
+      "schema": "QuizResult",
+      "description": "User quiz attempt history"
+    },
+    "/students/{studentId}": {
+      "schema": "Student",
+      "description": "Student profile, progress and achievements"
+    }
+  }
+}

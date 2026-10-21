@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ಸ್ಕೂಲ್ ಕ್ವಿಜ್</string>
+    <string name="nav_home">ಮುಖಪುಟ</string>
+    <string name="nav_dashboard">ವರದಿ ಪತ್ರಿಕೆ</string>
+    <string name="nav_rankings">ಶ್ರೇಯಾಂಕಗಳು</string>
+    <string name="nav_battle">ದ್ವಂದ್ವ ಕಾಳಗ</string>
+    <string name="nav_admin">ಶಿಕ್ಷಕರ ಫಲಕ</string>
+    <string name="settings">ಅಪ್ಲಿಕೇಶನ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
+    <string name="language">ಭಾಷೆ</string>
+    <string name="choose_language">ಕ್ವಿಜ್ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="english">English</string>
+    <string name="kannada">ಕನ್ನಡ</string>
+    <string name="hindi">हिन्दी</string>
+    <string name="daily_reward">ದೈನಂದಿನ ಹಾಜರಾತಿ ಉಡುಗೊರೆ</string>
+    <string name="claim">ಪಡೆಯಿರಿ</string>
+    <string name="search_hint">ವಿಷಯ, ಘಟಕ ಅಥವಾ ಅಧ್ಯಾಯ ಹುಡುಕಿ&#8230;</string>
+    <string name="class_select">ತರಗತಿ ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="subjects">ವಿಷಯಗಳು</string>
+    <string name="play">ಆಟವಾಡು</string>
+    <string name="next_question">ಮುಂದಿನ ಪ್ರಶ್ನೆ</string>
+    <string name="finish_quiz">ಕ್ವಿಜ್ ಮುಕ್ತಾಯಗೊಳಿಸಿ</string>
+    <string name="overview">ಅವಲೋಕನ</string>
+    <string name="badges">ಬ್ಯಾಡ್ಜ್‌ಗಳು</string>
+    <string name="flashcards">ಫ್ಲ್ಯಾಶ್‌ಕಾರ್ಡ್ ಪುನರಾವರ್ತನೆ</string>
+    <string name="daily_challenge">ದೈನಂದಿನ ಸವಾಲು</string>
+    <string name="study_timer">ಅಧ್ಯಯನ ಏಕಾಗ್ರತೆ ಟೈಮರ್</string>
+    <string name="bookmarks_vault">ಉಳಿಸಿದ ಬುಕ್‌ಮಾರ್ಕ್‌ಗಳು</string>
+</resources>

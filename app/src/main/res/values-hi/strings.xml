@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">स्कूल क्विज</string>
+    <string name="nav_home">मुख्य</string>
+    <string name="nav_dashboard">डैशबोर्ड</string>
+    <string name="nav_rankings">रैंकिंग</string>
+    <string name="nav_battle">1vs1 मुकाबला</string>
+    <string name="nav_admin">शिक्षक पैनल</string>
+    <string name="settings">एप्लिकेशन सेटिंग्स</string>
+    <string name="language">भाषा</string>
+    <string name="choose_language">क्विज भाषा चुनें</string>
+    <string name="english">English</string>
+    <string name="kannada">ಕನ್ನಡ</string>
+    <string name="hindi">हिन्दी</string>
+    <string name="daily_reward">दैनिक उपस्थिति इनाम</string>
+    <string name="claim">प्राप्त करें</string>
+    <string name="search_hint">विषय, इकाई या अध्याय खोजें&#8230;</string>
+    <string name="class_select">कक्षा चुनें</string>
+    <string name="subjects">विषय</string>
+    <string name="play">खेलें</string>
+    <string name="next_question">अगला प्रश्न</string>
+    <string name="finish_quiz">क्विज समाप्त करें</string>
+    <string name="overview">अवलोकन</string>
+    <string name="badges">बैज</string>
+    <string name="flashcards">फ्लैशकार्ड पुनरावृत्ति</string>
+    <string name="daily_challenge">दैनिक चुनौती</string>
+    <string name="study_timer">अध्ययन फोकस टाइमर</string>
+    <string name="bookmarks_vault">सहेजे गए बुकमार्क</string>
+</resources>

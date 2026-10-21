@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Firebase configuration generated from google-services.json -->
+    <string name="google_app_id" translatable="false">1:660044042159:android:f9791e429dbfc23228695a</string>
+    <string name="google_api_key" translatable="false">AIzaSyBrQ6wsTcWETrool90bZ7BaEOSezZWMmEA</string>
+    <string name="firebase_database_url" translatable="false">https://gen-lang-client-0355863001.firebaseio.com</string>
+    <string name="gcm_defaultSenderId" translatable="false">660044042159</string>
+    <string name="google_storage_bucket" translatable="false">gen-lang-client-0355863001.firebasestorage.app</string>
+    <string name="project_id" translatable="false">gen-lang-client-0355863001</string>
+    <string name="default_web_client_id" translatable="false">660044042159-5hit524ailtvriqagfjbvu9r5ull491m.apps.googleusercontent.com</string>
+</resources>

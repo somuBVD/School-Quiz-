@@ -1,0 +1,6 @@
+{
+  "name": "School Quiz",
+  "description": "A modern, persistent quiz application for Standard 6 to 10 with interactive question types, Formula Vault cheatsheets, verifiable Certificates of Excellence, Excel/CSV/PDF uploads, WorkManager daily reminders, and multi-language support (English, Kannada, Hindi).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

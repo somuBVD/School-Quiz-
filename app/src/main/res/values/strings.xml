@@ -1,0 +1,28 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">School Quiz</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_rankings">Rankings</string>
+    <string name="nav_battle" tools:ignore="Typos">1vs1 Duel</string>
+    <string name="nav_admin">Teacher Panel</string>
+    <string name="settings">Application Settings</string>
+    <string name="language">Language</string>
+    <string name="choose_language">Choose Quiz Language</string>
+    <string name="english">English</string>
+    <string name="kannada">Kannada</string>
+    <string name="hindi">Hindi</string>
+    <string name="daily_reward">Daily Attendance Reward</string>
+    <string name="claim">Claim</string>
+    <string name="search_hint">Search by Subject, Unit or Chapter&#8230;</string>
+    <string name="class_select">Select Standard / Class</string>
+    <string name="subjects">Subjects</string>
+    <string name="play">Play</string>
+    <string name="next_question">Next Question</string>
+    <string name="finish_quiz">Finish Quiz</string>
+    <string name="overview">Overview</string>
+    <string name="badges">Badges</string>
+    <string name="flashcards">Flashcard Revision</string>
+    <string name="daily_challenge">Daily Challenge</string>
+    <string name="study_timer">Study Focus Timer</string>
+    <string name="bookmarks_vault">Saved Bookmarks</string>
+</resources>

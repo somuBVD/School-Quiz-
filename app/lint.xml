@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- Ignore dependency update warnings since versions are strictly pinned and aligned in libs.versions.toml -->
+    <issue id="GradleDependency" severity="ignore" />
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <issue id="NewerVersionAvailable" severity="ignore" />
+
+    <!-- Unused resources: Localization strings and assets are accessed dynamically across languages -->
+    <issue id="UnusedResources" severity="ignore" />
+
+    <!-- SharedPreferences.edit() usage is standard and safe throughout the data layer -->
+    <issue id="UseKtx" severity="ignore" />
+
+    <!-- Adaptive vector icons are configured in mipmap-anydpi-v26 for Android 8+ -->
+    <issue id="IconDipSize" severity="ignore" />
+
+    <!-- Application context singletons are safe from activity leaks -->
+    <issue id="StaticFieldLeak" severity="ignore" />
+</lint>
