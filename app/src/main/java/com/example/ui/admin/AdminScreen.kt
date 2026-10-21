@@ -153,15 +153,15 @@ fun AdminScreen(
                 tabList.add("FACULTY" to "👥 Faculty & Roles")
             }
 
-            Row(
+            FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
                     .clip(RoundedCornerShape(16.dp))
                     .background(if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9))
                     .border(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
                     .padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 tabList.forEach { (key, label) ->
                     val active = activeAdminTab == key
@@ -172,10 +172,10 @@ fun AdminScreen(
                             contentColor = if (active) Color.White else subtitleColor
                         ),
                         modifier = Modifier
-                            .height(38.dp)
+                            .height(36.dp)
                             .testTag("admin_tab_$key"),
                         shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp)
                     ) {
                         Text(text = label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
                     }
@@ -844,49 +844,57 @@ fun AdminScreen(
                         singleLine = true
                     )
 
-                    // Standard Filters with FlowRow Wrap
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text("Std:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = subtitleColor)
-                        FilterChip(
-                            selected = selectedStdFilter == null,
-                            onClick = { selectedStdFilter = null },
-                            label = { Text("All", fontSize = 11.sp) },
-                            modifier = Modifier.testTag("filter_std_all")
-                        )
-                        listOf(6 to "Std 6", 7 to "Std 7", 8 to "Std 8", 9 to "Std 9", 10 to "Std 10", 11 to "Morarji", 12 to "NMMS").forEach { (std, label) ->
+                    // Standard Filters - Single scrollable horizontal line
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Standard / Class Filter:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = subtitleColor)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             FilterChip(
-                                selected = selectedStdFilter == std,
-                                onClick = { selectedStdFilter = if (selectedStdFilter == std) null else std },
-                                label = { Text(label, fontSize = 11.sp) },
-                                modifier = Modifier.testTag("filter_std_$std")
+                                selected = selectedStdFilter == null,
+                                onClick = { selectedStdFilter = null },
+                                label = { Text("All Classes", fontSize = 11.sp) },
+                                modifier = Modifier.testTag("filter_std_all")
                             )
+                            listOf(6 to "Std 6", 7 to "Std 7", 8 to "Std 8", 9 to "Std 9", 10 to "Std 10", 11 to "Morarji", 12 to "NMMS").forEach { (std, label) ->
+                                FilterChip(
+                                    selected = selectedStdFilter == std,
+                                    onClick = { selectedStdFilter = if (selectedStdFilter == std) null else std },
+                                    label = { Text(label, fontSize = 11.sp) },
+                                    modifier = Modifier.testTag("filter_std_$std")
+                                )
+                            }
                         }
                     }
 
-                    // Subject Filters with FlowRow Wrap
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text("Subject:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = subtitleColor)
-                        FilterChip(
-                            selected = selectedSubjectFilter == null,
-                            onClick = { selectedSubjectFilter = null },
-                            label = { Text("All Subjects", fontSize = 11.sp) },
-                            modifier = Modifier.testTag("filter_subj_all")
-                        )
-                        listOf("math", "science", "social", "english", "kannada", "hindi", "computer").forEach { subj ->
+                    // Subject Filters - Single scrollable horizontal line
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Subject Filter:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = subtitleColor)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             FilterChip(
-                                selected = selectedSubjectFilter == subj,
-                                onClick = { selectedSubjectFilter = if (selectedSubjectFilter == subj) null else subj },
-                                label = { Text(subj.replaceFirstChar { it.uppercase() }, fontSize = 11.sp) },
-                                modifier = Modifier.testTag("filter_subj_$subj")
+                                selected = selectedSubjectFilter == null,
+                                onClick = { selectedSubjectFilter = null },
+                                label = { Text("All Subjects", fontSize = 11.sp) },
+                                modifier = Modifier.testTag("filter_subj_all")
                             )
+                            listOf("math", "science", "social", "english", "kannada", "hindi", "computer").forEach { subj ->
+                                FilterChip(
+                                    selected = selectedSubjectFilter == subj,
+                                    onClick = { selectedSubjectFilter = if (selectedSubjectFilter == subj) null else subj },
+                                    label = { Text(subj.replaceFirstChar { it.uppercase() }, fontSize = 11.sp) },
+                                    modifier = Modifier.testTag("filter_subj_$subj")
+                                )
+                            }
                         }
                     }
                 }
@@ -1067,11 +1075,11 @@ fun AdminScreen(
                             shape = RoundedCornerShape(12.dp)
                         )
 
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        // Category Chips - FlowRow wraps cleanly to next horizontal line
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             listOf("General", "Exam", "Daily Challenge", "System").forEach { cat ->
                                 val act = notifCategory == cat
@@ -1110,8 +1118,6 @@ fun AdminScreen(
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = "Broadcasted Bulletins (${notifications.size})",
@@ -1206,8 +1212,6 @@ fun AdminScreen(
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = "Campus Ad Campaigns (${activeAds.size})",
@@ -1396,16 +1400,15 @@ private fun RoomQuestionAdminCard(
                 .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Header: Subject, Standard, Unit, Difficulty, and Action Buttons
-            Row(
+            // Header: Subject, Standard, Unit, Difficulty, and Action Buttons (FlowRow for seamless wrapping)
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.weight(1f)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -1422,8 +1425,6 @@ private fun RoomQuestionAdminCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-
-                Spacer(modifier = Modifier.width(6.dp))
 
                 FlowRow(
                     verticalArrangement = Arrangement.spacedBy(4.dp),

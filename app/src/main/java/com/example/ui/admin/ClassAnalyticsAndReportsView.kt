@@ -299,12 +299,13 @@ fun ClassAnalyticsAndReportsView(
                     }
                 }
 
-                // Standard / Grade Selector Pills
+                // Standard / Grade Selector Pills - Single scrollable horizontal line
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     val grades = listOf(0 to "All Classes", 6 to "Class 6", 7 to "Class 7", 8 to "Class 8", 9 to "Class 9", 10 to "Class 10")
                     grades.forEach { (grade, label) ->
@@ -489,10 +490,11 @@ fun ClassAnalyticsAndReportsView(
                         }
                     }
 
-                    // Legend
-                    Row(
+                    // Legend - FlowRow wraps cleanly to next horizontal line
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         LegendItem(label = "Advanced: ${classMetrics.advancedCount}", color = Color(0xFF10B981))
                         LegendItem(label = "Proficient: ${classMetrics.proficientCount}", color = Color(0xFF3B82F6))

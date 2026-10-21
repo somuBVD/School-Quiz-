@@ -293,7 +293,7 @@ fun BulkQuestionUploadDialog(
                                 }
                             }
 
-                            // Class / Standard Selection Row
+                            // Class / Standard Selection Row - Single scrollable horizontal line
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
                                     text = "Class / Grade / Exam Stream:",
@@ -301,10 +301,12 @@ fun BulkQuestionUploadDialog(
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                FlowRow(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     listOf(6, 7, 8, 9, 10, 11, 12).forEach { stdNum ->
                                         val isSelected = targetStd == stdNum
@@ -329,7 +331,7 @@ fun BulkQuestionUploadDialog(
                                 }
                             }
 
-                            // Subject Selection Row
+                            // Subject Selection Row - Single scrollable horizontal line
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
                                     text = "Subject:",
@@ -337,10 +339,12 @@ fun BulkQuestionUploadDialog(
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                FlowRow(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     SubjectType.entries.forEach { sub ->
                                         val isSelected = targetSubject == sub.id
@@ -395,11 +399,10 @@ fun BulkQuestionUploadDialog(
                                 }
 
                                 if (!isCustomUnitSelected && availableUnits.isNotEmpty()) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .horizontalScroll(rememberScrollState()),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    FlowRow(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         availableUnits.forEach { unitItem ->
                                             val isSelected = targetUnitId == unitItem.id && targetUnitName == unitItem.name

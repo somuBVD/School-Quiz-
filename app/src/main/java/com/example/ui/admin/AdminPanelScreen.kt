@@ -731,12 +731,14 @@ private fun BulkFileImporterTab(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                // Standard Selector Chips
+                // Standard Selector Chips - Single scrollable horizontal line
                 Text("Standard / Class:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     val standards = listOf(
                         6 to "Class 6",
@@ -760,12 +762,14 @@ private fun BulkFileImporterTab(
                     }
                 }
 
-                // Subject Selector Chips
+                // Subject Selector Chips - Single scrollable horizontal line
                 Text("Subject:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     val subjects: List<Pair<String, String>> = listOf(
                         SubjectType.SCIENCE.id to "Science (ವಿಜ್ಞಾನ)",
@@ -789,14 +793,15 @@ private fun BulkFileImporterTab(
                     }
                 }
 
-                // Unit selection if available
+                // Unit selection if available - Single scrollable horizontal line
                 if (availableUnits.isNotEmpty()) {
                     Text("Unit / Chapter:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         availableUnits.take(8).forEach { u ->
                             FilterChip(
@@ -1175,11 +1180,10 @@ private fun BulkFileImporterTab(
 
                                     // Options row
                                     val opts = q.optionsString.split('|')
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .horizontalScroll(rememberScrollState()),
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    FlowRow(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         opts.forEachIndexed { oIdx, opt ->
                                             val isCorrect = opt.trim().equals(q.correctAnswer.trim(), ignoreCase = true)
@@ -1372,12 +1376,11 @@ private fun DirectPasteTab(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        // Quick sample insert buttons
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        // Quick sample insert buttons - FlowRow wraps to next horizontal line
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             OutlinedButton(
                 onClick = {
@@ -1541,12 +1544,13 @@ private fun FirestoreQuestionPoolTab(
             }
         }
 
-        // Standard Filter Chips
+        // Standard Filter Chips - Single scrollable horizontal line
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             FilterChip(
                 selected = selectedStd == null,
@@ -1558,6 +1562,35 @@ private fun FirestoreQuestionPoolTab(
                     selected = selectedStd == std,
                     onClick = { onStdChange(if (selectedStd == std) null else std) },
                     label = { Text(if (std == 11) "Morarji" else if (std == 12) "NMMS" else "Class $std", fontSize = 11.sp) }
+                )
+            }
+        }
+
+        // Subject Filter Chips - Single scrollable horizontal line
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            FilterChip(
+                selected = selectedSubject == null,
+                onClick = { onSubjectChange(null) },
+                label = { Text("All Subjects", fontSize = 11.sp) }
+            )
+            listOf(
+                SubjectType.SCIENCE.id to "Science",
+                SubjectType.MATHEMATICS.id to "Maths",
+                SubjectType.SOCIAL_SCIENCE.id to "Social",
+                SubjectType.KANNADA.id to "Kannada",
+                SubjectType.ENGLISH.id to "English",
+                SubjectType.HINDI.id to "Hindi"
+            ).forEach { (subId, subLabel) ->
+                FilterChip(
+                    selected = selectedSubject == subId,
+                    onClick = { onSubjectChange(if (selectedSubject == subId) null else subId) },
+                    label = { Text(subLabel, fontSize = 11.sp) }
                 )
             }
         }

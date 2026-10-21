@@ -167,16 +167,21 @@ fun AuthDialog(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 UserRole.values().forEach { role ->
-                                    val isSelected = selectedRole == role
+                                    val isLocked = role == UserRole.ADMIN
+                                    val isSelected = selectedRole == role && !isLocked
                                     FilterChip(
                                         selected = isSelected,
-                                        onClick = { selectedRole = role },
+                                        enabled = !isLocked,
+                                        onClick = { if (!isLocked) selectedRole = role },
+                                        leadingIcon = if (isLocked) {
+                                            { Icon(Icons.Default.Lock, contentDescription = "Locked", modifier = Modifier.size(12.dp)) }
+                                        } else null,
                                         label = {
                                             Text(
                                                 text = when (role) {
                                                     UserRole.STUDENT -> "🎓 Student"
                                                     UserRole.TEACHER -> "👨‍🏫 Teacher"
-                                                    UserRole.ADMIN -> "🛡️ Admin"
+                                                    UserRole.ADMIN -> "Admin (Locked)"
                                                 },
                                                 fontSize = 11.sp,
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
@@ -466,10 +471,10 @@ fun AuthenticatedUserInfo(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(4.dp))
-            FlowRow(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 UserRole.values().forEach { role ->
                     val isCurrent = user.role == role
@@ -485,11 +490,13 @@ fun AuthenticatedUserInfo(
                         border = BorderStroke(
                             1.dp,
                             if (isCurrent) roleColor else if (isDark) Color(0xFF475569) else Color(0xFFCBD5E1)
-                        )
+                        ),
+                        modifier = Modifier.weight(1f)
                     ) {
                         Row(
                             modifier = Modifier
-                                .padding(horizontal = 12.dp, vertical = 7.dp),
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp, vertical = 7.dp),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {

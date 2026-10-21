@@ -73,6 +73,8 @@ fun DashboardScreen(
     var showPdfExportDialog by remember { mutableStateOf(false) }
     var showOfflineManagerDialog by remember { mutableStateOf(false) }
     var showBulkUploadDialog by remember { mutableStateOf(false) }
+    // Upload lock toggle (set to true to lock/inactive; easily set to false later to unlock)
+    val isUploadLocked = true
     var activeMilestoneCelebration by remember { mutableStateOf<MilestoneType?>(null) }
     var hasCelebratedStreak7 by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
@@ -401,18 +403,35 @@ fun DashboardScreen(
                     Text("Share 🚀", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
 
+                // Upload button (Locked / Inactive per user request; button and link preserved for future activation)
                 Button(
-                    onClick = { showBulkUploadDialog = true },
+                    onClick = { if (!isUploadLocked) showBulkUploadDialog = true },
+                    enabled = !isUploadLocked,
                     modifier = Modifier
                         .weight(1.1f)
                         .testTag("quick_bulk_upload_button"),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF0D9488),
+                        disabledContainerColor = if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9),
+                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    ),
+                    border = if (isUploadLocked) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)) else null,
                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
                 ) {
-                    Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Icon(
+                        imageVector = if (isUploadLocked) Icons.Default.Lock else Icons.Default.CloudUpload,
+                        contentDescription = "Upload (Locked)",
+                        modifier = Modifier.size(14.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Upload 📥", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        text = if (isUploadLocked) "Upload 🔒" else "Upload 📥",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
 
@@ -946,18 +965,29 @@ fun DashboardScreen(
                         color = if (isDark) Color(0xFFCCFBF1) else Color(0xFF064E3B)
                     )
 
+                    // Bulk Question Upload Button (Locked / Inactive per user request; link preserved for future activation)
                     Button(
-                        onClick = { showBulkUploadDialog = true },
+                        onClick = { if (!isUploadLocked) showBulkUploadDialog = true },
+                        enabled = !isUploadLocked,
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("dashboard_open_bulk_upload_button"),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488))
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF0D9488),
+                            disabledContainerColor = if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9),
+                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        ),
+                        border = if (isUploadLocked) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)) else null
                     ) {
-                        Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(
+                            imageVector = if (isUploadLocked) Icons.Default.Lock else Icons.Default.CloudUpload,
+                            contentDescription = "Upload (Locked)",
+                            modifier = Modifier.size(16.dp)
+                        )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Add Bulk Questions (Excel / CSV / PDF)",
+                            text = if (isUploadLocked) "Add Bulk Questions (Locked 🔒)" else "Add Bulk Questions (Excel / CSV / PDF)",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,

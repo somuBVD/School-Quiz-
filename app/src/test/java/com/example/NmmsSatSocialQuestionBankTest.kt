@@ -13,7 +13,7 @@ class NmmsSatSocialQuestionBankTest {
     @Test
     fun testNmmsSatSocialUnitsStructure() {
         val units = NmmsSatSocialQuestionBank.units
-        assertEquals(4, units.size)
+        assertEquals(6, units.size)
 
         assertEquals(1, units[0].id)
         assertTrue(units[0].name.contains("ಇತಿಹಾಸ"))
@@ -29,29 +29,41 @@ class NmmsSatSocialQuestionBankTest {
 
         assertEquals(4, units[3].id)
         assertTrue(units[3].name.contains("NMMS-2025"))
-        assertEquals(15, units[3].totalQuestions)
+        assertEquals(30, units[3].totalQuestions)
+
+        assertEquals(5, units[4].id)
+        assertTrue(units[4].name.contains("NMMS-2024"))
+        assertEquals(35, units[4].totalQuestions)
+
+        assertEquals(6, units[5].id)
+        assertTrue(units[5].name.contains("NMMS-2023"))
+        assertEquals(25, units[5].totalQuestions)
     }
 
     @Test
     fun testAllQuestionsAreValidAndVerified() {
         val questions = NmmsSatSocialQuestionBank.questions
-        assertEquals(156, questions.size)
+        assertEquals(231, questions.size)
 
         val u1Questions = questions.filter { it.unitId == 1 }
         val u2Questions = questions.filter { it.unitId == 2 }
         val u3Questions = questions.filter { it.unitId == 3 }
         val u4Questions = questions.filter { it.unitId == 4 }
+        val u5Questions = questions.filter { it.unitId == 5 }
+        val u6Questions = questions.filter { it.unitId == 6 }
 
         assertEquals(45, u1Questions.size)
         assertEquals(49, u2Questions.size)
         assertEquals(47, u3Questions.size)
-        assertEquals(15, u4Questions.size)
+        assertEquals(30, u4Questions.size)
+        assertEquals(35, u5Questions.size)
+        assertEquals(25, u6Questions.size)
 
         // Verify question integrity
         questions.forEach { q ->
             assertEquals(12, q.stdId)
             assertEquals("sat_social", q.subjectId)
-            assertTrue("Unit ID must be 1..4", q.unitId in 1..4)
+            assertTrue("Unit ID must be 1..6", q.unitId in 1..6)
             assertTrue("Question text must not be empty", q.questionText.isNotBlank())
             assertEquals("Each question must have 4 options", 4, q.options.size)
             assertTrue("Correct answer '${q.correctAnswer}' must be in options", q.options.contains(q.correctAnswer))
@@ -71,7 +83,7 @@ class NmmsSatSocialQuestionBankTest {
 
         val satSocial = nmms!!.subjects.find { it.id == "sat_social" }
         assertNotNull(satSocial)
-        assertEquals(3, satSocial!!.units.size)
+        assertEquals(6, satSocial!!.units.size)
 
         // Query units via getQuestionsForUnit
         val u1FromRepo = QuizStaticData.getQuestionsForUnit(12, "sat_social", 1, emptyList())
@@ -82,5 +94,8 @@ class NmmsSatSocialQuestionBankTest {
 
         val u3FromRepo = QuizStaticData.getQuestionsForUnit(12, "sat_social", 3, emptyList())
         assertEquals(47, u3FromRepo.size)
+
+        val u4FromRepo = QuizStaticData.getQuestionsForUnit(12, "sat_social", 4, emptyList())
+        assertEquals(30, u4FromRepo.size)
     }
 }

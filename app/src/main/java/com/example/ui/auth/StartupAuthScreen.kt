@@ -72,6 +72,13 @@ fun StartupAuthScreen(
         }
     }
 
+    // Admin role is locked for new registrations; ensure selectedRole resets to STUDENT in register mode
+    LaunchedEffect(isSignUpMode) {
+        if (isSignUpMode && selectedRole == UserRole.ADMIN) {
+            selectedRole = UserRole.STUDENT
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -259,16 +266,39 @@ fun StartupAuthScreen(
                                 modifier = Modifier.weight(1f)
                             )
 
-                            // Admin Option
+                            // Admin Option (Locked for new registrations)
                             RoleSelectionPill(
                                 title = "Admin",
                                 icon = "🛡️",
-                                subtitle = "Full Control",
-                                isSelected = selectedRole == UserRole.ADMIN,
+                                subtitle = "No New Register",
+                                isSelected = false,
                                 activeColor = amberAccent,
-                                onClick = { selectedRole = UserRole.ADMIN },
+                                onClick = { /* Locked - Admin accounts cannot register */ },
+                                isLocked = true,
                                 modifier = Modifier.weight(1f)
                             )
+                        }
+
+                        // Admin locked info note
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("🔒", fontSize = 11.sp)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Admin role is locked: Admin accounts are pre-provisioned and cannot be newly registered.",
+                                    fontSize = 10.5.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
                         }
 
                         // For Student role: Class / Standard Picker
@@ -504,21 +534,34 @@ fun StartupAuthScreen(
                             Text("👨‍🏫 Teacher", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                         }
 
+                        // Admin demo chip is locked/inactive in both Register and Existing layouts
                         OutlinedButton(
-                            onClick = {
-                                keyboardController?.hide()
-                                focusManager.clearFocus()
-                                viewModel.signInDemoAdmin()
-                                onAuthComplete()
-                            },
+                            onClick = { /* Locked by policy */ },
+                            enabled = false,
                             shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                disabledContainerColor = if (isDark) Color(0xFF1E293B).copy(alpha = 0.5f) else Color(0xFFF1F5F9),
+                                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                             contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
                             modifier = Modifier
                                 .weight(1f)
                                 .height(38.dp)
                                 .testTag("startup_demo_admin_button")
                         ) {
-                            Text("🛡️ Admin", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = "Locked",
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text("Admin", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                            }
                         }
                     }
                 }
@@ -553,35 +596,74 @@ private fun RoleSelectionPill(
     isSelected: Boolean,
     activeColor: Color,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isLocked: Boolean = false
 ) {
+    val pillBg = when {
+        isLocked -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+        isSelected -> activeColor.copy(alpha = 0.12f)
+        else -> MaterialTheme.colorScheme.surface
+    }
+    val borderColor = when {
+        isLocked -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        isSelected -> activeColor
+        else -> MaterialTheme.colorScheme.outlineVariant
+    }
+
     Surface(
         shape = RoundedCornerShape(14.dp),
-        color = if (isSelected) activeColor.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface,
-        border = BorderStroke(
-            if (isSelected) 2.dp else 1.dp,
-            if (isSelected) activeColor else MaterialTheme.colorScheme.outlineVariant
-        ),
+        color = pillBg,
+        border = BorderStroke(if (isSelected && !isLocked) 2.dp else 1.dp, borderColor),
         modifier = modifier
-            .clickable(onClick = onClick)
+            .then(
+                if (!isLocked) Modifier.clickable(onClick = onClick)
+                else Modifier
+            )
             .testTag("role_pill_${title.lowercase()}")
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 10.dp, horizontal = 6.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp, horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(icon, fontSize = 22.sp)
+            Box(contentAlignment = Alignment.Center) {
+                Text(icon, fontSize = 22.sp)
+                if (isLocked) {
+                    Box(
+                        modifier = Modifier
+                            .offset(x = 10.dp, y = (-8).dp)
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFDC2626)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Locked",
+                            tint = Color.White,
+                            modifier = Modifier.size(10.dp)
+                        )
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = title,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp,
-                color = if (isSelected) activeColor else MaterialTheme.colorScheme.onSurface
+                color = if (isLocked) {
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                } else if (isSelected) {
+                    activeColor
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                }
             )
             Text(
-                text = subtitle,
+                text = if (isLocked) "Locked" else subtitle,
                 fontSize = 9.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (isLocked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

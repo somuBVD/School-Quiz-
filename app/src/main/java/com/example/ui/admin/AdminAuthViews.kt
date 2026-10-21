@@ -208,12 +208,17 @@ fun AdminAuthGate(
                         ) {
                             listOf(
                                 UserRole.TEACHER to "👨‍🏫 Teacher",
-                                UserRole.ADMIN to "🛡️ Administrator"
+                                UserRole.ADMIN to "Admin (Locked)"
                             ).forEach { (role, label) ->
-                                val selected = selectedRole == role
+                                val isLocked = role == UserRole.ADMIN
+                                val selected = selectedRole == role && !isLocked
                                 FilterChip(
                                     selected = selected,
-                                    onClick = { selectedRole = role },
+                                    enabled = !isLocked,
+                                    onClick = { if (!isLocked) selectedRole = role },
+                                    leadingIcon = if (isLocked) {
+                                        { Icon(Icons.Default.Lock, contentDescription = "Locked", modifier = Modifier.size(13.dp)) }
+                                    } else null,
                                     label = {
                                         Text(
                                             text = label,
@@ -405,12 +410,12 @@ fun AdminAuthGate(
                     }
                 }
 
-                // Administrator Demo Button
+                // Administrator Demo Button (Locked by policy)
                 Surface(
-                    onClick = { viewModel.signInDemoAdmin() },
+                    onClick = { /* Locked by policy */ },
                     shape = RoundedCornerShape(14.dp),
-                    color = Color(0xFF7C3AED).copy(alpha = 0.08f),
-                    border = BorderStroke(1.2.dp, Color(0xFF7C3AED)),
+                    color = (if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)).copy(alpha = 0.6f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("demo_sign_in_admin")
@@ -426,33 +431,33 @@ fun AdminAuthGate(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.weight(1f, fill = false)
                         ) {
-                            Text("🛡️", fontSize = 20.sp)
+                            Text("🔒", fontSize = 20.sp)
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = "Principal Administrator",
+                                    text = "Principal Administrator (Locked)",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isDark) Color(0xFFC4B5FD) else Color(0xFF7C3AED)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )
                                 Text(
-                                    text = "admin.principal@school.edu",
+                                    text = "admin.principal@school.edu • Direct login restricted",
                                     fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )
                             }
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF7C3AED).copy(alpha = 0.18f),
-                            border = BorderStroke(1.dp, Color(0xFF7C3AED).copy(alpha = 0.4f))
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                         ) {
                             Text(
-                                text = "ADMIN ROLE",
+                                text = "🔒 LOCKED",
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = if (isDark) Color(0xFFC4B5FD) else Color(0xFF7C3AED),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
@@ -652,43 +657,87 @@ fun StudentAccessRestricted(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                // Quick Elevation & Switch Buttons
+                // Quick Elevation & Switch Buttons (Locked by policy)
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
-                        onClick = { viewModel.updateUserRole(UserRole.TEACHER) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488)),
+                        onClick = { /* Locked by policy */ },
+                        enabled = false,
+                        colors = ButtonDefaults.buttonColors(
+                            disabledContainerColor = (if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)),
+                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.height(42.dp),
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp)
                     ) {
-                        Text("⚡ Elevate to Teacher", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Lock, contentDescription = "Locked", modifier = Modifier.size(13.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text("Elevate to Teacher (Locked)", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                        }
                     }
 
                     Button(
-                        onClick = { viewModel.updateUserRole(UserRole.ADMIN) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED)),
+                        onClick = { /* Locked by policy */ },
+                        enabled = false,
+                        colors = ButtonDefaults.buttonColors(
+                            disabledContainerColor = (if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)),
+                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.height(42.dp),
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp)
                     ) {
-                        Text("🛡️ Elevate to Admin", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Lock, contentDescription = "Locked", modifier = Modifier.size(13.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text("Elevate to Admin (Locked)", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                        }
                     }
                 }
 
                 OutlinedButton(
-                    onClick = { viewModel.signOut() },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)),
-                    border = BorderStroke(1.dp, Color(0xFFDC2626).copy(alpha = 0.5f)),
+                    onClick = { /* Locked by policy */ },
+                    enabled = false,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        disabledContainerColor = (if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)).copy(alpha = 0.5f)
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().height(40.dp)
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Lock, contentDescription = "Locked", modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Sign Out to Login as Faculty", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("Sign Out to Login as Faculty (Locked)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+
+                // Security Policy Note
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = (if (isDark) Color(0xFF78350F) else Color(0xFFFEF3C7)).copy(alpha = 0.35f),
+                    border = BorderStroke(1.dp, if (isDark) Color(0xFF92400E) else Color(0xFFFDE68A)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("🔒", fontSize = 13.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Elevate to Teacher, Elevate to Admin, and Sign Out to Login as Faculty buttons are locked by security policy.",
+                            fontSize = 11.sp,
+                            color = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }
@@ -756,8 +805,8 @@ fun FacultyHeaderBar(
                     Spacer(modifier = Modifier.width(10.dp))
 
                     Column(modifier = Modifier.weight(1f, fill = false)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
+                        FlowRow(
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
@@ -766,8 +815,7 @@ fun FacultyHeaderBar(
                                 fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false)
+                                overflow = TextOverflow.Ellipsis
                             )
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
@@ -822,10 +870,10 @@ fun FacultyHeaderBar(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                FlowRow(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     UserRole.values().forEach { r ->
                         val isActive = role == r
@@ -841,11 +889,13 @@ fun FacultyHeaderBar(
                             border = BorderStroke(
                                 1.dp,
                                 if (isActive) targetRoleColor else if (isDark) Color(0xFF475569) else Color(0xFFCBD5E1)
-                            )
+                            ),
+                            modifier = Modifier.weight(1f)
                         ) {
                             Row(
                                 modifier = Modifier
-                                    .padding(horizontal = 12.dp, vertical = 7.dp),
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 4.dp, vertical = 7.dp),
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
