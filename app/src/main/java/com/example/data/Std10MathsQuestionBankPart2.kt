@@ -17,7 +17,8 @@ package com.example.data
  */
 object Std10MathsQuestionBankPart2 {
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = listOf(
         QuestionModel(
             id = "std10_math_u8_q1",
             stdId = 10,

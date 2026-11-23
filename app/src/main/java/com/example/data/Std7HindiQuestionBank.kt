@@ -27,7 +27,9 @@ object Std7HindiQuestionBank {
         UnitTemplate(18, "पाठ 18: व्याकरण और भाषा ज्ञान", 6, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std7Hindi") {
+            listOf(
         // ==================== पाठ 1: पढ़ना है जी पढ़ना है ====================
         QuestionModel(
             id = "std7_hindi_u1_q1",
@@ -883,4 +885,5 @@ object Std7HindiQuestionBank {
             correctAnswer = "क्रियाविशेषण"
         )
     )
+        }
 }

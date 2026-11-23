@@ -47,7 +47,9 @@ object NmmsSatScienceQuestionBank {
         )
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("NmmsSatScience") {
+            listOf(
         // ========================================================
         // ಘಟಕ 1: ಬಲ, ಒತ್ತಡ, ಘರ್ಷಣೆ ಮತ್ತು ಚಲನೆ (Force, Pressure, Friction & Motion)
         // ========================================================
@@ -2442,4 +2444,5 @@ object NmmsSatScienceQuestionBank {
             explanation = "ಹ್ಯಾಲಿಯ ಧೂಮಕೇತು ಪ್ರತಿ 75-76 ವರ್ಷಗಳಿಗೊಮ್ಮೆ ಸೂರ್ಯನ ಸುತ್ತ ತನ್ನ ಕಕ್ಷೆಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಭೂಮಿಗೆ ಗೋಚರಿಸುತ್ತದೆ (ಕೊನೆಯದಾಗಿ 1986 ರಲ್ಲಿ ಗೋಚರಿಸಿತ್ತು). [NMMS-2023]"
         )
     )
+        }
 }

@@ -163,50 +163,21 @@ class FirebaseCloudSyncManager(private val context: Context) {
 
     private fun initCloudServices() {
         try {
-            var app = FirebaseApp.getApps(context).firstOrNull()
-            if (app == null) {
-                app = FirebaseApp.initializeApp(context)
-            }
-            if (app == null) {
-                try {
-                    val options = FirebaseOptions.Builder()
-                        .setApplicationId("1:660044042159:android:f9791e429dbfc23228695a")
-                        .setProjectId("gen-lang-client-0355863001")
-                        .setApiKey("AIzaSyBrQ6wsTcWETrool90bZ7BaEOSezZWMmEA")
-                        .setStorageBucket("gen-lang-client-0355863001.firebasestorage.app")
-                        .build()
-                    app = FirebaseApp.initializeApp(context, options)
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Fallback app init: ${t.message}")
-                }
-            }
-
-            if (app != null) {
-                val dbId = try {
-                    context.getString(com.example.R.string.firestore_database_id)
-                } catch (_: Exception) {
-                    null
-                }
-                val db = if (!dbId.isNullOrBlank()) {
-                    try {
-                        FirebaseFirestore.getInstance(app, dbId)
-                    } catch (e: Exception) {
-                        FirebaseFirestore.getInstance(app)
-                    }
-                } else {
-                    FirebaseFirestore.getInstance(app)
-                }
+            val app = NamedFirestoreProvider.getApp(context)
+            val db = NamedFirestoreProvider.getDatabase(context)
+            if (app != null && db != null) {
                 // Configure Firestore persistence for offline data access for quiz questions and student profiles
                 try {
+                    val maxCacheBytes = 50L * 1024L * 1024L // 50 MB bounded offline cache
                     val firestoreSettings = FirebaseFirestoreSettings.Builder()
                         .setLocalCacheSettings(
                             PersistentCacheSettings.newBuilder()
-                                .setSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
+                                .setSizeBytes(maxCacheBytes)
                                 .build()
                         )
                         .build()
                     db.firestoreSettings = firestoreSettings
-                    Log.d(TAG, "Firestore persistence cache configured (Unlimited size)")
+                    Log.d(TAG, "Firestore persistence cache configured (50 MB bounded)")
                 } catch (e: Exception) {
                     Log.w(TAG, "Firestore persistence configuration note: ${e.message}")
                 }
@@ -214,9 +185,9 @@ class FirebaseCloudSyncManager(private val context: Context) {
                 firestore = db
                 storage = FirebaseStorage.getInstance(app)
                 _isCloudAvailable.value = true
-                Log.d(TAG, "Firebase Firestore & Storage initialized successfully with offline persistence")
+                Log.d(TAG, "Named Firebase Firestore & Storage initialized successfully with offline persistence")
             } else {
-                Log.i(TAG, "FirebaseApp not initialized, cloud sync in offline mode")
+                Log.i(TAG, "FirebaseApp or named Firestore unavailable, cloud sync in offline mode")
                 _isCloudAvailable.value = false
             }
         } catch (e: Throwable) {

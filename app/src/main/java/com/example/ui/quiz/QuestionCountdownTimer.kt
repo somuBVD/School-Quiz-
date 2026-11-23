@@ -3,26 +3,30 @@ package com.example.ui.quiz
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.HourglassBottom
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -117,6 +121,8 @@ enum class TimeThresholdZone(
             }
         }
 
+        fun forElapsedSeconds(elapsedSecs: Int): TimeThresholdZone = getZoneForElapsed(elapsedSecs)
+
         fun calculateScore(
             isCorrect: Boolean,
             elapsedSecs: Int,
@@ -183,9 +189,14 @@ data class QuestionTimeStat(
 )
 
 /**
- * Highly polished countdown timer component displayed during active quiz questions.
- * Sleek, compact design that avoids vertical bloat and visual overflow.
- * Supports optional countdown timer mode for flexible student practice.
+ * Prominent, interactive countdown timer component displayed during active quiz questions.
+ * Designed specifically for students to practice time management and exam pacing with:
+ *  - Radial / circular visual countdown gauge that sweeps in real time
+ *  - Color-coded urgency zones (Speed Bonus ⚡, Standard ⏱️, Overtime ⚠️, Critical 🚨)
+ *  - Multi-segment stage progress bar showing the 4 point zones
+ *  - Real-time time management coaching tip
+ *  - Pulsing alert effects during final seconds
+ *  - Optional pace preset adjustments (30s, 60s, 90s, 120s or Untimed)
  */
 @Composable
 fun QuestionCountdownTimer(
@@ -194,19 +205,25 @@ fun QuestionCountdownTimer(
     isAnswerSubmitted: Boolean,
     isReviewMarked: Boolean = false,
     isTimerEnabled: Boolean = true,
+    onSelectTimeLimit: ((Int) -> Unit)? = null,
+    onToggleTimer: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    var showPaceDialog by remember { mutableStateOf(false) }
+
     if (!isTimerEnabled) {
         Surface(
             modifier = modifier
                 .fillMaxWidth()
                 .testTag("question_timer_disabled_pill"),
-            shape = RoundedCornerShape(10.dp),
+            shape = RoundedCornerShape(14.dp),
             color = Color(0xFFF0FDF4),
             border = BorderStroke(1.dp, Color(0xFFBBF7D0))
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -214,30 +231,60 @@ fun QuestionCountdownTimer(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f, fill = false)
                 ) {
-                    Text("🌱", fontSize = 12.sp)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Untimed Practice",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF15803D),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFDCFCE7)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("🌱", fontSize = 14.sp)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = "Untimed Practice Mode",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF15803D),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "Relaxed pace • Take all the time you need",
+                            fontSize = 10.sp,
+                            color = Color(0xFF16A34A),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = Color(0xFFDCFCE7)
-                ) {
-                    Text(
-                        text = "Practice ✨",
-                        fontSize = 9.5.sp,
-                        fontWeight = FontWeight.ExtraBold,
+
+                if (onToggleTimer != null) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
                         color = Color(0xFF16A34A),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
+                        modifier = Modifier.clickable { onToggleTimer() }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Timer,
+                                contentDescription = "Enable Timer",
+                                tint = Color.White,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Start Timer ⏱️",
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -249,14 +296,14 @@ fun QuestionCountdownTimer(
     val zoneColor = Color(currentZone.colorHex)
     val progressFraction = (secondsRemaining.toFloat() / totalSeconds.toFloat()).coerceIn(0f, 1f)
 
-    // Pulsing animation when running low on time (< 10s remaining)
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val pulseScale by if (secondsRemaining <= 10 && !isAnswerSubmitted) {
+    // Pulsing animation when running low on time (<= 15s remaining)
+    val infiniteTransition = rememberInfiniteTransition(label = "timer_pulse")
+    val pulseScale by if (secondsRemaining <= 15 && !isAnswerSubmitted) {
         infiniteTransition.animateFloat(
             initialValue = 1f,
-            targetValue = 1.05f,
+            targetValue = if (secondsRemaining <= 5) 1.08f else 1.04f,
             animationSpec = infiniteRepeatable(
-                animation = tween(500, easing = FastOutSlowInEasing),
+                animation = tween(if (secondsRemaining <= 5) 350 else 600, easing = FastOutSlowInEasing),
                 repeatMode = RepeatMode.Reverse
             ),
             label = "pulseScale"
@@ -265,95 +312,326 @@ fun QuestionCountdownTimer(
         remember { mutableStateOf(1f) }
     }
 
+    // Border glow for critical time
+    val borderColor = if (secondsRemaining <= 10 && !isAnswerSubmitted) {
+        Color(0xFFEF4444)
+    } else {
+        zoneColor.copy(alpha = 0.4f)
+    }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .testTag("question_countdown_timer"),
-        shape = RoundedCornerShape(12.dp),
-        color = zoneColor.copy(alpha = 0.08f),
-        border = BorderStroke(1.dp, zoneColor.copy(alpha = 0.35f))
+        shape = RoundedCornerShape(16.dp),
+        color = zoneColor.copy(alpha = 0.07f),
+        border = BorderStroke(if (secondsRemaining <= 10 && !isAnswerSubmitted) 1.8.dp else 1.dp, borderColor)
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Sleek Top Row: Time remaining badge + Current zone status pill
+            // MAIN ROW: Radial Countdown Dial + Urgency Badge + Time Management Guidance
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .scale(pulseScale)
-                ) {
-                    Text(
-                        text = if (secondsRemaining <= 10) "⚠️" else "⏱️",
-                        fontSize = 13.sp
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    val minutes = (secondsRemaining / 60).coerceAtLeast(0)
-                    val seconds = (secondsRemaining % 60).coerceAtLeast(0)
-                    val formattedTime = if (secondsRemaining >= 60) {
-                        "%d:%02d".format(minutes, seconds)
-                    } else {
-                        "${secondsRemaining}s"
-                    }
-                    Text(
-                        text = "$formattedTime left",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = zoneColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.testTag("timer_seconds_remaining")
-                    )
-                }
+                // Circular Visual Countdown Dial
+                CircularCountdownDial(
+                    secondsRemaining = secondsRemaining,
+                    totalSeconds = totalSeconds,
+                    zoneColor = zoneColor,
+                    pulseScale = pulseScale,
+                    modifier = Modifier.testTag("circular_countdown_dial")
+                )
 
-                // Dynamic Status Pill
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = zoneColor.copy(alpha = 0.15f),
-                    border = BorderStroke(0.8.dp, zoneColor.copy(alpha = 0.35f))
+                // Middle Column: Live Status + Time Management Coaching
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(currentZone.badgeEmoji, fontSize = 9.5.sp)
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text(
-                            text = currentZone.shortLabel,
-                            fontSize = 9.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = zoneColor,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        // Current Zone Status Pill
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = zoneColor.copy(alpha = 0.16f),
+                            border = BorderStroke(0.8.dp, zoneColor.copy(alpha = 0.45f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(currentZone.badgeEmoji, fontSize = 11.sp)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = currentZone.label,
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = zoneColor,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+
+                        // Pace Preset Button (30s, 60s, 90s, 120s)
+                        if (onSelectTimeLimit != null) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                modifier = Modifier
+                                    .clickable { showPaceDialog = true }
+                                    .testTag("timer_pace_settings_chip")
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Tune,
+                                        contentDescription = "Pace Settings",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text(
+                                        text = "${totalSeconds}s",
+                                        fontSize = 9.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
                     }
+
+                    // Educational Time Management Coaching Guidance
+                    val coachingTip = when {
+                        isAnswerSubmitted -> "✅ Answer submitted in ${elapsedSeconds}s (${currentZone.title})"
+                        secondsRemaining <= 10 -> "🚨 Auto-submitting in ${secondsRemaining}s! Lock your answer now"
+                        elapsedSeconds <= 30 -> "⚡ Fast zone! Answer in ≤30s for +15 Speed Bonus"
+                        elapsedSeconds <= 60 -> "⏱️ Ideal board exam pace (31-60s) • Full 100 points"
+                        elapsedSeconds <= 90 -> "⚠️ Overtime zone • 20 pts deduction active"
+                        else -> "🚨 Critical overtime • 50 pts deduction active"
+                    }
+                    Text(
+                        text = coachingTip,
+                        fontSize = 10.5.sp,
+                        fontWeight = if (secondsRemaining <= 10 || elapsedSeconds <= 30) FontWeight.Bold else FontWeight.Medium,
+                        color = if (secondsRemaining <= 10) Color(0xFFDC2626) else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
 
-            // Sleek Compact Progress Bar
+            // 4-STAGE TIME MANAGEMENT PACING METER (Visual Progress Segments)
+            TimeManagementMilestoneBar(
+                elapsedSeconds = elapsedSeconds,
+                totalSeconds = totalSeconds,
+                currentZone = currentZone
+            )
+        }
+    }
+
+    // Pace Preset Selection Dialog
+    if (showPaceDialog && onSelectTimeLimit != null) {
+        AlertDialog(
+            onDismissRequest = { showPaceDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("⏱️", fontSize = 20.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Question Pace & Time Limit", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Choose your practice pace per question to practice time management for exams:",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    listOf(
+                        Triple(30, "⚡ 30s Lightning Sprint", "Fast-paced reflex challenge for scholarship speed practice"),
+                        Triple(60, "⏱️ 60s Target Pace", "Ideal 1-minute standard for competitive multiple choice exams"),
+                        Triple(90, "📚 90s Board Exam Pace", "Deep thinking pace with time to double-check choices"),
+                        Triple(120, "⏳ 120s Extended Study", "Default comfortable timing for new chapters and revision")
+                    ).forEach { (seconds, label, desc) ->
+                        val isSelected = totalSeconds == seconds
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isSelected) Color(0xFF4F46E5).copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            border = BorderStroke(1.dp, if (isSelected) Color(0xFF4F46E5) else Color.Transparent),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onSelectTimeLimit(seconds)
+                                    showPaceDialog = false
+                                }
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text(
+                                    text = label,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.5.sp,
+                                    color = if (isSelected) Color(0xFF4F46E5) else MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = desc,
+                                    fontSize = 10.5.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showPaceDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+}
+
+/**
+ * Animated Circular Dial that sweeps 360 degrees as the question timer counts down.
+ */
+@Composable
+fun CircularCountdownDial(
+    secondsRemaining: Int,
+    totalSeconds: Int,
+    zoneColor: Color,
+    pulseScale: Float,
+    modifier: Modifier = Modifier
+) {
+    val progressFraction = (secondsRemaining.toFloat() / totalSeconds.toFloat()).coerceIn(0f, 1f)
+    val animatedProgress by animateFloatAsState(
+        targetValue = progressFraction,
+        animationSpec = tween(durationMillis = 350, easing = LinearEasing),
+        label = "timer_radial_progress"
+    )
+
+    Box(
+        modifier = modifier
+            .size(54.dp)
+            .scale(pulseScale),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(3.dp)) {
+            val strokeWidth = 5.dp.toPx()
+            // Background circular track
+            drawCircle(
+                color = zoneColor.copy(alpha = 0.18f),
+                radius = (size.minDimension - strokeWidth) / 2,
+                style = Stroke(width = strokeWidth)
+            )
+            // Animated remaining sweep arc
+            drawArc(
+                color = zoneColor,
+                startAngle = -90f,
+                sweepAngle = 360f * animatedProgress,
+                useCenter = false,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
+                size = Size(size.width - strokeWidth, size.height - strokeWidth)
+            )
+        }
+
+        // Center Countdown Display
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            val minutes = (secondsRemaining / 60).coerceAtLeast(0)
+            val seconds = (secondsRemaining % 60).coerceAtLeast(0)
+            val displayText = if (totalSeconds >= 60 && minutes > 0) {
+                "%d:%02d".format(minutes, seconds)
+            } else {
+                "${secondsRemaining}s"
+            }
+
+            Text(
+                text = displayText,
+                fontSize = if (displayText.length > 3) 11.5.sp else 13.sp,
+                fontWeight = FontWeight.Black,
+                color = zoneColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.testTag("timer_seconds_remaining")
+            )
+        }
+    }
+}
+
+/**
+ * 4-stage visual milestone track showing the 4 point zones:
+ *  1. Speed Bonus (0-30s / +15)
+ *  2. Target Pace (31-60s / Full)
+ *  3. Overtime Warning (61-90s / -20)
+ *  4. Critical (91-120s / -50)
+ */
+@Composable
+fun TimeManagementMilestoneBar(
+    elapsedSeconds: Int,
+    totalSeconds: Int,
+    currentZone: TimeThresholdZone,
+    modifier: Modifier = Modifier
+) {
+    val stages = listOf(
+        TimeThresholdZone.SPEED_BONUS to "⚡ ≤30s",
+        TimeThresholdZone.STANDARD to "⏱️ ≤60s",
+        TimeThresholdZone.THRESHOLD_1_PENALTY to "⚠️ ≤90s",
+        TimeThresholdZone.THRESHOLD_2_PENALTY to "🚨 >90s"
+    )
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(4.dp))
+            .background(Color.Black.copy(alpha = 0.04f))
+            .padding(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        stages.forEach { (zone, label) ->
+            val isActive = currentZone == zone
+            val isPassed = elapsedSeconds > zone.maxElapsedSec
+            val zoneBaseColor = Color(zone.colorHex)
+
+            val segmentBg = when {
+                isActive -> zoneBaseColor
+                isPassed -> zoneBaseColor.copy(alpha = 0.35f)
+                else -> zoneBaseColor.copy(alpha = 0.12f)
+            }
+
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(3.dp)
-                    .clip(RoundedCornerShape(1.5.dp))
-                    .background(zoneColor.copy(alpha = 0.15f))
+                    .weight(1f)
+                    .height(16.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(segmentBg)
+                    .then(
+                        if (isActive) Modifier.border(1.dp, Color.White.copy(alpha = 0.8f), RoundedCornerShape(3.dp))
+                        else Modifier
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(fraction = progressFraction)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(1.5.dp))
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(zoneColor.copy(alpha = 0.8f), zoneColor)
-                            )
-                        )
+                Text(
+                    text = label,
+                    fontSize = 8.5.sp,
+                    fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.Medium,
+                    color = if (isActive) Color.White else zoneBaseColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

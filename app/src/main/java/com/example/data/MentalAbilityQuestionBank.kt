@@ -99,7 +99,9 @@ object MentalAbilityQuestionBank {
         )
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("MentalAbility") {
+            listOf(
         QuestionModel(
             id = "nmms_gmat_u1_q1",
             stdId = 12,
@@ -3298,4 +3300,5 @@ object MentalAbilityQuestionBank {
             explanation = "'6 4 3' ಮಾದರಿಯನ್ನು ಎಣಿಸಿದಾಗ: ...6 4 3... (1ನೇ ಬಾರಿ), ...6 4 3... (2ನೇ ಬಾರಿ), ...6 4 3... (3ನೇ ಬಾರಿ), ...6 4 3 (4ನೇ ಬಾರಿ). ಒಟ್ಟು 4 ಬಾರಿ ಬರುತ್ತದೆ. [NMMS-2023]"
         )
     )
+        }
 }

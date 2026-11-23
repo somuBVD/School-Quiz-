@@ -247,6 +247,26 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     val focusTimerState: StateFlow<FocusTimerState> = _focusTimerState.asStateFlow()
     private var focusTimerJob: Job? = null
 
+    // --- 7-Day Trial & ₹20/Month Google Play Subscription ---
+    private val subscriptionManager = com.example.billing.SubscriptionManager.getInstance(application)
+    val subscriptionUiState: StateFlow<com.example.billing.SubscriptionUiState> = subscriptionManager.uiState
+
+    fun launchSubscriptionPurchase(activity: android.app.Activity) {
+        subscriptionManager.launchSubscriptionFlow(activity)
+    }
+
+    fun restoreSubscriptionPurchases() {
+        subscriptionManager.refreshPurchases(showFeedback = true)
+    }
+
+    fun refreshSubscriptionState() {
+        subscriptionManager.refreshPurchases(showFeedback = false)
+    }
+
+    fun openManageSubscription(context: android.content.Context) {
+        subscriptionManager.openManageSubscription(context)
+    }
+
     // --- 1vs1 Battle Arena State ---
     private val onlineBattleManager = RealOnlineBattleManager.getInstance(application)
     private val _battleArenaState = MutableStateFlow(BattleArenaState())
@@ -277,6 +297,11 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     val blitzState: StateFlow<BlitzState> = _blitzState.asStateFlow()
     private var blitzTimerJob: Job? = null
 
+    // --- Board Mock Exam Simulator State ---
+    private val _mockExamState = MutableStateFlow(com.example.ui.exam.MockExamState())
+    val mockExamState: StateFlow<com.example.ui.exam.MockExamState> = _mockExamState.asStateFlow()
+    private var mockExamTimerJob: Job? = null
+
     // --- Mistake Vault State ---
     private val mistakeManager = MistakeManager.getInstance(application)
     private val _mistakesList = MutableStateFlow(mistakeManager.getMistakes())
@@ -306,6 +331,8 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     }
 
     fun updateUserRole(role: UserRole) {
+        if (FirebaseAuthManager.IS_TEACHER_AUTH_LOCKED && role == UserRole.TEACHER) return
+        if (FirebaseAuthManager.IS_ADMIN_AUTH_LOCKED && role == UserRole.ADMIN) return
         val user = (authUiState.value as? AuthUiState.Authenticated)?.user ?: return
         firebaseAuthManager.saveUserRole(user.uid, role)
     }
@@ -787,6 +814,19 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
 
     fun skipCurrentQuestion() {
         submitQuizAnswer("SKIPPED")
+    }
+
+    /**
+     * Dynamically adjusts the per-question countdown timer limit for students
+     * practicing exam pacing (e.g. 30s sprint, 60s target, 90s, or 120s exam pace).
+     */
+    fun setQuizQuestionTimeLimit(seconds: Int) {
+        val limit = seconds.coerceIn(30, 300)
+        val curr = _activeQuizState.value
+        _activeQuizState.value = curr.copy(
+            totalTimeLimitSeconds = limit,
+            secondsRemaining = if (!curr.isAnswerSubmitted) limit else curr.secondsRemaining
+        )
     }
 
     private fun finishAndSaveQuiz() {
@@ -1286,6 +1326,193 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     }
 
     // ==========================================
+    // --- BOARD MOCK EXAM SIMULATOR ACTIONS ---
+    // ==========================================
+
+    fun startMockExam(stdId: Int = _selectedStd.value, subjectId: String = "math", durationMinutes: Int = 15) {
+        viewModelScope.launch {
+            val subjectTitle = QuizStaticData.std6To10List.find { it.std == stdId }
+                ?.subjects?.find { it.id.equals(subjectId, ignoreCase = true) }?.title
+                ?: when (subjectId.lowercase()) {
+                    "math" -> "Mathematics"
+                    "science" -> "Science"
+                    "social" -> "Social Science"
+                    "english" -> "English"
+                    "kannada" -> "Kannada"
+                    "hindi" -> "Hindi"
+                    else -> "Mock Exam"
+                }
+
+            val allQuestions = mutableListOf<QuestionModel>()
+            for (u in 1..8) {
+                try {
+                    val unitQs = repository.getQuestionsForUnit(stdId, subjectId, u)
+                    allQuestions.addAll(unitQs)
+                } catch (ignored: Exception) {}
+            }
+            if (allQuestions.isEmpty()) {
+                for (s in listOf("math", "science", "social", "english")) {
+                    for (u in 1..4) {
+                        try {
+                            allQuestions.addAll(repository.getQuestionsForUnit(stdId, s, u))
+                        } catch (ignored: Exception) {}
+                    }
+                    if (allQuestions.size >= 15) break
+                }
+            }
+
+            val examQuestions = allQuestions.shuffled().distinctBy { it.id }.take(20)
+            val durationSecs = durationMinutes * 60
+
+            _mockExamState.value = com.example.ui.exam.MockExamState(
+                isActive = true,
+                stdId = stdId,
+                subjectId = subjectId,
+                subjectTitle = subjectTitle,
+                questions = examQuestions,
+                userAnswers = emptyMap(),
+                markedForReview = emptySet(),
+                currentIndex = 0,
+                secondsRemaining = durationSecs,
+                totalDurationSeconds = durationSecs,
+                isFinished = false,
+                result = null
+            )
+
+            startMockExamTimer()
+        }
+    }
+
+    private fun startMockExamTimer() {
+        mockExamTimerJob?.cancel()
+        mockExamTimerJob = viewModelScope.launch {
+            while (_mockExamState.value.isActive && !_mockExamState.value.isFinished) {
+                delay(1000)
+                val curSecs = _mockExamState.value.secondsRemaining
+                if (curSecs > 1) {
+                    _mockExamState.value = _mockExamState.value.copy(secondsRemaining = curSecs - 1)
+                } else {
+                    submitMockExam()
+                    break
+                }
+            }
+        }
+    }
+
+    fun selectMockExamAnswer(questionIndex: Int, answer: String) {
+        val curr = _mockExamState.value
+        val updatedAnswers = curr.userAnswers.toMutableMap()
+        updatedAnswers[questionIndex] = answer
+        _mockExamState.value = curr.copy(userAnswers = updatedAnswers)
+    }
+
+    fun toggleMockExamReview(questionIndex: Int) {
+        val curr = _mockExamState.value
+        val updated = curr.markedForReview.toMutableSet()
+        if (updated.contains(questionIndex)) {
+            updated.remove(questionIndex)
+        } else {
+            updated.add(questionIndex)
+        }
+        _mockExamState.value = curr.copy(markedForReview = updated)
+    }
+
+    fun clearMockExamAnswer(questionIndex: Int) {
+        val curr = _mockExamState.value
+        val updatedAnswers = curr.userAnswers.toMutableMap()
+        updatedAnswers.remove(questionIndex)
+        _mockExamState.value = curr.copy(userAnswers = updatedAnswers)
+    }
+
+    fun jumpToMockExamQuestion(questionIndex: Int) {
+        val curr = _mockExamState.value
+        if (questionIndex in curr.questions.indices) {
+            _mockExamState.value = curr.copy(currentIndex = questionIndex)
+        }
+    }
+
+    fun submitMockExam() {
+        mockExamTimerJob?.cancel()
+        val curr = _mockExamState.value
+        if (curr.isFinished) return
+
+        var correct = 0
+        var incorrect = 0
+        val reviews = mutableListOf<SessionAnswerReview>()
+
+        curr.questions.forEachIndexed { index, question ->
+            val selected = curr.userAnswers[index] ?: ""
+            val isCorrect = selected.isNotEmpty() && selected.equals(question.correctAnswer, ignoreCase = true)
+            if (isCorrect) {
+                correct++
+            } else if (selected.isNotEmpty()) {
+                incorrect++
+            }
+
+            reviews.add(
+                SessionAnswerReview(
+                    questionIndex = index,
+                    question = question,
+                    studentAnswer = selected,
+                    isCorrect = isCorrect,
+                    timeTakenSeconds = 45
+                )
+            )
+        }
+
+        val totalQ = curr.questions.size.coerceAtLeast(1)
+        val unanswered = totalQ - curr.userAnswers.size
+        val percentage = (correct.toFloat() / totalQ.toFloat()) * 100f
+        val grade = when {
+            percentage >= 90f -> "A+ (Outstanding)"
+            percentage >= 80f -> "A (Distinction)"
+            percentage >= 70f -> "B+ (Very Good)"
+            percentage >= 60f -> "B (Good)"
+            percentage >= 50f -> "C (Pass)"
+            else -> "Needs Revision"
+        }
+
+        val timeTaken = (curr.totalDurationSeconds - curr.secondsRemaining).coerceAtLeast(10)
+        val xpWon = (correct * 15) + 50
+
+        val examResult = com.example.ui.exam.MockExamResult(
+            totalQuestions = totalQ,
+            correctCount = correct,
+            incorrectCount = incorrect,
+            unansweredCount = unanswered,
+            totalScore = correct * 100,
+            percentage = percentage,
+            grade = grade,
+            timeTakenSeconds = timeTaken,
+            xpAwarded = xpWon,
+            reviews = reviews
+        )
+
+        _mockExamState.value = curr.copy(
+            isFinished = true,
+            result = examResult
+        )
+
+        viewModelScope.launch {
+            try {
+                repository.handleQuizCompletion(
+                    stdId = curr.stdId,
+                    subjectId = curr.subjectId,
+                    unitId = 99,
+                    score = correct,
+                    total = totalQ,
+                    xpEarnedOverride = xpWon
+                )
+            } catch (ignored: Exception) {}
+        }
+    }
+
+    fun exitMockExam() {
+        mockExamTimerJob?.cancel()
+        _mockExamState.value = com.example.ui.exam.MockExamState(isActive = false)
+    }
+
+    // ==========================================
     // --- MISTAKE VAULT ACTIONS ---
     // ==========================================
 
@@ -1589,9 +1816,50 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     // ==========================================
 
     val isStartupAuthCompleted: StateFlow<Boolean> = firebaseAuthManager.isStartupAuthCompletedFlow
+    val isFirebaseGoogleSignedIn: StateFlow<Boolean> = firebaseAuthManager.isFirebaseSignedIn
+
+    fun signInWithGoogle(
+        activityContext: android.content.Context,
+        role: UserRole = UserRole.STUDENT,
+        standard: Int = _selectedStd.value,
+        onSuccess: (() -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            val effectiveRole = if (
+                (FirebaseAuthManager.IS_TEACHER_AUTH_LOCKED && role == UserRole.TEACHER) ||
+                (FirebaseAuthManager.IS_ADMIN_AUTH_LOCKED && role == UserRole.ADMIN)
+            ) {
+                UserRole.STUDENT
+            } else {
+                role
+            }
+            val safeStandard = standard.coerceIn(1, 12)
+            val result = firebaseAuthManager.signInWithGoogle(activityContext, effectiveRole, safeStandard)
+            result.onSuccess { user ->
+                val profile = repository.getUserProfileDirect() ?: UserProfile()
+                val nameToUse = user.displayName?.trim()?.ifBlank { null } ?: profile.name
+                val updated = profile.copy(
+                    name = nameToUse,
+                    standard = safeStandard,
+                    avatar = user.photoUrl ?: profile.avatar
+                )
+                repository.saveUserProfile(updated)
+                _selectedStd.value = safeStandard
+                try {
+                    subscriptionManager.syncTrialWithCloudForUser(user.uid)
+                } catch (_: Throwable) { }
+                try {
+                    cloudSyncManager.syncProfileToCloud(user.uid, updated)
+                } catch (_: Throwable) { }
+                onSuccess?.invoke()
+            }
+        }
+    }
 
     fun signOutFromApp() {
-        firebaseAuthManager.signOut()
+        viewModelScope.launch {
+            firebaseAuthManager.signOutWithCredentials(getApplication<Application>())
+        }
     }
 
     fun isStartupAuthCompleted(): Boolean = firebaseAuthManager.isStartupAuthCompleted()
@@ -1609,8 +1877,10 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
                 val name = user.displayName ?: email.substringBefore("@")
                 val updated = profile.copy(name = name)
                 repository.saveUserProfile(updated)
-                cloudSyncManager.saveUserDoc(user.uid, user.email, name, user.role, updated.standard)
-                cloudSyncManager.syncProfileToCloud(user.uid, updated)
+                if (firebaseAuthManager.isFirebaseSessionActive()) {
+                    cloudSyncManager.saveUserDoc(user.uid, user.email, name, user.role, updated.standard)
+                    cloudSyncManager.syncProfileToCloud(user.uid, updated)
+                }
                 onSuccess?.invoke()
             }
         }
@@ -1634,8 +1904,10 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
                 val updated = profile.copy(name = nameToUse, standard = standard)
                 repository.saveUserProfile(updated)
                 _selectedStd.value = standard
-                cloudSyncManager.saveUserDoc(user.uid, user.email, nameToUse, role, standard)
-                cloudSyncManager.syncProfileToCloud(user.uid, updated)
+                if (firebaseAuthManager.isFirebaseSessionActive()) {
+                    cloudSyncManager.saveUserDoc(user.uid, user.email, nameToUse, role, standard)
+                    cloudSyncManager.syncProfileToCloud(user.uid, updated)
+                }
                 onSuccess?.invoke()
             }
         }
@@ -1677,14 +1949,10 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
         }
     }
 
-    fun signInAnonymously() {
-        viewModelScope.launch {
-            firebaseAuthManager.signInAnonymously()
-        }
-    }
-
     fun signOut() {
-        firebaseAuthManager.signOut()
+        viewModelScope.launch {
+            firebaseAuthManager.signOutWithCredentials(getApplication<Application>())
+        }
     }
 
     // ==========================================
@@ -1903,15 +2171,23 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
                 if (subjectFilter == "mental_ability") {
                     candidateQuestions.addAll(com.example.data.MentalAbilityData.asQuestionModels)
                 } else {
-                    val staticMatching = QuizStaticData.staticQuestions.filter { 
-                        it.subjectId.equals(subjectFilter, ignoreCase = true) 
-                    }
+                    val staticMatching = QuizStaticData.getQuestionsForSubject(std, subjectFilter)
                     if (staticMatching.isNotEmpty()) {
                         candidateQuestions.addAll(staticMatching)
                     } else {
-                        candidateQuestions.addAll(QuizStaticData.staticQuestions)
+                        candidateQuestions.addAll(QuizStaticData.coreStaticQuestions)
                     }
                 }
+            }
+
+            if (!onlineBattleManager.isAuthenticatedForOnlineBattle()) {
+                onlineMatchmakingTimerJob?.cancel()
+                _battleArenaState.value = _battleArenaState.value.copy(
+                    stage = BattleStage.LOBBY,
+                    isSearchingMatch = false,
+                    statusMessage = "Sign in with Google above to enter real-time Firebase 1 vs 1 online battles."
+                )
+                return@launch
             }
 
             if (roomCode.isNotBlank()) {
@@ -1927,21 +2203,21 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
                     )
                     attachToOnlineBattleRoom(roomId, isHost = false)
                 }.onFailure { err ->
+                    onlineMatchmakingTimerJob?.cancel()
                     _battleArenaState.value = _battleArenaState.value.copy(
                         stage = BattleStage.LOBBY,
                         isSearchingMatch = false,
-                        statusMessage = "Duel error: ${err.message}"
+                        statusMessage = err.message ?: "Could not join room $roomCode."
                     )
                 }
             } else {
-                // 2. Quick Matchmaking via Firestore
-                try {
-                    val (roomId, code, isHost) = onlineBattleManager.findOrCreateMatch(
-                        user = profile,
-                        subjectId = subjectFilter,
-                        candidateQuestions = candidateQuestions
-                    )
-
+                // 2. Quick Matchmaking via named Cloud Firestore
+                val matchResult = onlineBattleManager.findOrCreateMatch(
+                    user = profile,
+                    subjectId = subjectFilter,
+                    candidateQuestions = candidateQuestions
+                )
+                matchResult.onSuccess { (roomId, code, isHost) ->
                     _battleArenaState.value = _battleArenaState.value.copy(
                         roomId = roomId,
                         roomCode = code,
@@ -1950,11 +2226,14 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
                         isWaitingForOnlinePlayer = isHost,
                         statusMessage = if (isHost) "Room created ($code). Waiting for an online classmate to join..." else "Matched with an online classmate! Entering battle..."
                     )
-
                     attachToOnlineBattleRoom(roomId, isHost)
-                } catch (e: Exception) {
-                    // Fallback to instant challenger if offline
-                    startAiBattleChallenger(candidateQuestions)
+                }.onFailure { err ->
+                    onlineMatchmakingTimerJob?.cancel()
+                    _battleArenaState.value = _battleArenaState.value.copy(
+                        stage = BattleStage.LOBBY,
+                        isSearchingMatch = false,
+                        statusMessage = err.message ?: "Online matchmaking unavailable right now."
+                    )
                 }
             }
         }
@@ -1966,6 +2245,15 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
         onlineMatchmakingTimerJob?.cancel()
 
         viewModelScope.launch {
+            if (!onlineBattleManager.isAuthenticatedForOnlineBattle()) {
+                _battleArenaState.value = _battleArenaState.value.copy(
+                    stage = BattleStage.LOBBY,
+                    isSearchingMatch = false,
+                    statusMessage = "Sign in with Google above to host a private 1 vs 1 duel room."
+                )
+                return@launch
+            }
+
             val profile = repository.getUserProfileDirect() ?: UserProfile()
             val std = _selectedStd.value
             val subjectFilter = _battleArenaState.value.selectedSubject
@@ -1980,11 +2268,14 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
                 }
             }
             if (candidateQuestions.isEmpty()) {
-                candidateQuestions.addAll(QuizStaticData.staticQuestions)
+                candidateQuestions.addAll(
+                    QuizStaticData.getQuestionsForSubject(std, subjectFilter)
+                        .ifEmpty { QuizStaticData.coreStaticQuestions }
+                )
             }
 
-            try {
-                val (roomId, code) = onlineBattleManager.createPrivateRoom(profile, subjectFilter, candidateQuestions)
+            val createResult = onlineBattleManager.createPrivateRoom(profile, subjectFilter, candidateQuestions)
+            createResult.onSuccess { (roomId, code) ->
                 _battleArenaState.value = _battleArenaState.value.copy(
                     isActive = true,
                     stage = BattleStage.MATCHMAKING,
@@ -1997,8 +2288,10 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
                     statusMessage = "Share Room Code: $code with your friend to duel!"
                 )
                 attachToOnlineBattleRoom(roomId, isHost = true)
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 _battleArenaState.value = _battleArenaState.value.copy(
+                    stage = BattleStage.LOBBY,
+                    isSearchingMatch = false,
                     statusMessage = "Could not create online room: ${e.message}"
                 )
             }
@@ -2006,9 +2299,15 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     }
 
     private fun attachToOnlineBattleRoom(roomId: String, isHost: Boolean) {
-        onlineBattleManager.attachRoomListener(roomId) { roomData ->
-            handleOnlineRoomUpdate(roomData, isHost)
-        }
+        onlineBattleManager.attachRoomListener(
+            roomId = roomId,
+            onUpdate = { roomData -> handleOnlineRoomUpdate(roomData, isHost) },
+            onError = { errorMsg ->
+                _battleArenaState.value = _battleArenaState.value.copy(
+                    statusMessage = errorMsg
+                )
+            }
+        )
     }
 
     private fun handleOnlineRoomUpdate(room: OnlineRoomData, isHost: Boolean) {
@@ -2252,7 +2551,10 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
                         }
                     }
                 }
-                if (list.isEmpty()) QuizStaticData.staticQuestions else list
+                if (list.isEmpty()) {
+                    QuizStaticData.getQuestionsForSubject(std, subjectFilter)
+                        .ifEmpty { QuizStaticData.coreStaticQuestions }
+                } else list
             }
 
             val battleQuestions = candidateQuestions.shuffled().take(5)
@@ -2630,7 +2932,10 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     fun resetQuestionBankToCurriculum(onComplete: ((Int) -> Unit)? = null) {
         viewModelScope.launch {
             try {
-                val defaultEntities = QuizStaticData.staticQuestions.map { qModel ->
+                val defaultEntities = QuizStaticData.getQuestionsForStandard(_selectedStd.value)
+                    .ifEmpty { QuizStaticData.coreStaticQuestions }
+                    .take(250)
+                    .map { qModel ->
                     qModel.toQuizQuestionEntity(
                         unitName = "Unit ${qModel.unitId}",
                         difficulty = "Medium",

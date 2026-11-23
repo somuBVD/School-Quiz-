@@ -202,8 +202,8 @@ fun SavedQuestionsTab(
 
                     Button(
                         onClick = {
-                            // Bookmark a sample question from static questions for instant demonstration
-                            val sample = QuizStaticData.staticQuestions.firstOrNull() ?: QuestionModel(
+                            // Bookmark a sample question from lightweight core bank without loading all 45 subject banks
+                            val sample = QuizStaticData.coreStaticQuestions.firstOrNull() ?: QuestionModel(
                                 id = "sample_bookmark_q1",
                                 stdId = 6,
                                 subjectId = "math",

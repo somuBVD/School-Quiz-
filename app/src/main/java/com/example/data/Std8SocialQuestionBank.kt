@@ -52,7 +52,9 @@ object Std8SocialQuestionBank {
         UnitTemplate(30, "ವ್ಯವಹಾರ ಅಧ್ಯಯನ: ಅಧ್ಯಾಯ 30 - ಸಣ್ಣ ಪ್ರಮಾಣದ ವ್ಯವಹಾರ ಸಂಘಟನೆಗಳು", 23, "Easy")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std8Social") {
+            listOf(
         // ==========================================
         // 🟦 ಅಧ್ಯಾಯ 1: ಆಧಾರಗಳು (16 ಪ್ರಶ್ನೆಗಳು)
         // LBA Revised 2026-27 - 8thSS-KM-LBARevised_1787048180
@@ -5954,4 +5956,5 @@ object Std8SocialQuestionBank {
             explanation = "ಸರಿಯಾದ ಉತ್ತರ: B) ಷೇರು"
         )
     )
+        }
 }

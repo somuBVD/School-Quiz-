@@ -48,7 +48,9 @@ object NmmsSatMathsQuestionBank {
         )
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("NmmsSatMaths") {
+            listOf(
         QuestionModel(
             id = "nmms_sat_math_u1_q1",
             stdId = 12,
@@ -2045,4 +2047,5 @@ object NmmsSatMathsQuestionBank {
             explanation = "ಕರ್ಣಗಳ ಸಂಖ್ಯೆಯ ಸೂತ್ರ = n(n - 3) / 2. ಷಡ್ಭುಜಕ್ಕೆ n = 6: 6(6 - 3) / 2 = (6 × 3) / 2 = 18 / 2 = 9 ಕರ್ಣಗಳು. [NMMS-2023]"
         )
     )
+        }
 }

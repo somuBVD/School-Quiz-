@@ -20,7 +20,9 @@ object Std7MathsQuestionBank {
         UnitTemplate(10, "ಘಟಕ 10: ಅಪವರ್ತನಗಳು ಮತ್ತು ದಶಮಾಂಶ ಕ್ರಿಯೆಗಳು", 20, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std7Maths") {
+            listOf(
         // ==================== ಘಟಕ 1: ದೊಡ್ಡ ಸಂಖ್ಯೆಗಳು ಮತ್ತು ಸಂಖ್ಯಾ ಪದ್ಧತಿ ====================
         QuestionModel(
             id = "s_7_mat_u1_1",
@@ -1114,4 +1116,5 @@ object Std7MathsQuestionBank {
             explanation = "15 + 20 = 35 (ವಿತರಣಾ ನಿಯಮ: (3 + 4) × 5 = 7 × 5 = 35)."
         )
     )
+        }
 }

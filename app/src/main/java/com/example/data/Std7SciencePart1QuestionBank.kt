@@ -12,7 +12,9 @@ package com.example.data
  */
 object Std7SciencePart1QuestionBank {
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std7SciencePart1") {
+            listOf(
         // ==================== ಘಟಕ 1: ನಿರಂತರವಾಗಿ ಬದಲಾಗುತ್ತಿರುವ ವಿಜ್ಞಾನದ ಜಗತ್ತು ====================
         QuestionModel(
             id = "s_7_sci_u1_1",
@@ -579,4 +581,5 @@ object Std7SciencePart1QuestionBank {
             explanation = "ಭಾರತ ಸರ್ಕಾರದ ರಾಷ್ಟ್ರೀಯ ಟೋಲ್ ಫ್ರೀ ವ್ಯಸನ ಮುಕ್ತ ಸಹಾಯವಾಣಿ ಸಂಖ್ಯೆ 14446."
         )
     )
+        }
 }

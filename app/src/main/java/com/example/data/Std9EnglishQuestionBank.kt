@@ -34,7 +34,9 @@ object Std9EnglishQuestionBank {
         UnitTemplate(10, "Unit 10: Grammar, Vocabulary & Language in Use", 15, "Hard")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std9English") {
+            listOf(
         // ========================================================
         // 🟦 UNIT 1 – THE ENCHANTED POOL & UPAGUPTA
         // ========================================================
@@ -2220,4 +2222,5 @@ object Std9EnglishQuestionBank {
             explanation = "A group of ships or warships under one command or sailing together is called a 'fleet'."
         )
     )
+        }
 }

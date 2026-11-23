@@ -48,7 +48,9 @@ object Std9HindiQuestionBank {
         UnitTemplate(18, "पाठ 18: व्यावहारिक व्याकरण और भाषा-ज्ञान", 18, "Hard")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std9Hindi") {
+            listOf(
         // ========================================================
         // 🟦 पाठ 1: जय-जय भारत माता (कविता - मैथिलीशरण गुप्त)
         // ========================================================
@@ -3146,4 +3148,5 @@ object Std9HindiQuestionBank {
             explanation = "‘हाथ-पाँव फूलना’ का अर्थ अचानक संकट सामने आने पर होश खो बैठना या अत्यधिक डर जाना है।"
         )
     )
+        }
 }

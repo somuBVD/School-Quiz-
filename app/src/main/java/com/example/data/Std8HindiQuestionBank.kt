@@ -26,7 +26,9 @@ object Std8HindiQuestionBank {
         UnitTemplate(17, "पाठ 17: कबीर के दोहे", 25, "Hard")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std8Hindi") {
+            listOf(
         // ========================================================
         // 🟦 पाठ 1: प्रार्थना
         // ========================================================
@@ -4182,4 +4184,5 @@ object Std8HindiQuestionBank {
             explanation = "कबीर सत्य, प्रेम, परोपकार और सदाचार का अमर संदेश देते हैं।"
         )
     )
+        }
 }

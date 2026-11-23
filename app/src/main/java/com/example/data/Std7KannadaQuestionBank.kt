@@ -25,7 +25,9 @@ object Std7KannadaQuestionBank {
         UnitTemplate(16, "ಘಟಕ 16: ವಚನಗಳ ಭಾವ ಸಂಗಮ", 9, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std7Kannada") {
+            listOf(
         // ========================================================
         // 🟦 ಅಧ್ಯಾಯ 1: ಪುಟ್ಟಜ್ಜಿ ಪುಟ್ಟಜ್ಜಿ ಕಥೆ ಹೇಳು (Unit 1)
         // ========================================================
@@ -2576,4 +2578,5 @@ object Std7KannadaQuestionBank {
             explanation = "“ಇಂತಲ್ಲದೆ ನಾನು ಅಳಿಮನವ”."
         )
     )
+        }
 }

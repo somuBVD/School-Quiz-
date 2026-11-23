@@ -48,7 +48,9 @@ object Std10HindiQuestionBank {
         UnitTemplate(18, "पाठ 18: व्यावहारिक व्याकरण, मुहावरे और अनुरूपता", 20, "Hard")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std10Hindi") {
+            listOf(
         // ========================================================
         // 🟦 पाठ 1: मातृभूमि
         // ========================================================,
@@ -3184,4 +3186,5 @@ object Std10HindiQuestionBank {
             explanation = "जहाँ किसी वस्तु का किसी स्थान या वस्तु से अलग होने का भाव हो, वहाँ अपादान कारक (से) होता है।"
         )
     )
+        }
 }

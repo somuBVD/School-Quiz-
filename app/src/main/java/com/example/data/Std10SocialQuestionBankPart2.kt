@@ -9,7 +9,8 @@ package com.example.data
  */
 object Std10SocialQuestionBankPart2 {
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = listOf(
         // ==========================================
         // ಅಧ್ಯಾಯ 17: ಭಾರತದ ಪ್ರಥಮ ಸ್ವಾತಂತ್ರ್ಯ ಸಂಗ್ರಾಮ (1857) (Unit 17)
         // ==========================================

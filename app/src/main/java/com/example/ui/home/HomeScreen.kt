@@ -56,9 +56,11 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     settingsViewModel: SettingsViewModel? = null,
     languageSettingsProvider: LanguageSettingsProvider? = null,
-    onOpenProfile: (() -> Unit)? = null
+    onOpenProfile: (() -> Unit)? = null,
+    onOpenSubscription: (() -> Unit)? = null
 ) {
     val userProfile by viewModel.userProfile.collectAsState()
+    val subscriptionState by viewModel.subscriptionUiState.collectAsState()
     val activeAds by viewModel.activeAds.collectAsState()
     val selectedStd by viewModel.selectedStd.collectAsState()
     val selectedSubjectId by viewModel.selectedSubjectId.collectAsState()
@@ -299,6 +301,12 @@ fun HomeScreen(
                 }
             }
         }
+
+        // 1B. 7-DAY FREE TRIAL & ₹20/MONTH SUBSCRIPTION BANNER
+        com.example.ui.billing.SubscriptionTrialBanner(
+            subscriptionState = subscriptionState,
+            onOpenPaywall = { onOpenSubscription?.invoke() }
+        )
 
         // 2. ADVERTISING & CONTEST BANNER CAROUSEL
         val ad = if (activeAds.isNotEmpty()) (activeAds.getOrNull(activeAdIndex) ?: activeAds.first()) else null
@@ -566,11 +574,20 @@ fun HomeScreen(
             cardBorder = cardBorder
         )
 
-        // 3.5. QUICK CHALLENGES & ARENA HUB (Compact Grid)
+        // 3.63. INTERACTIVE 7-DAY STUDY STREAK & GOALS
         val mistakes by viewModel.mistakesList.collectAsState()
         var showMistakeVaultDialog by remember { mutableStateOf(false) }
         var showFormulaVaultDialog by remember { mutableStateOf(false) }
         var showStudyTimerDialog by remember { mutableStateOf(false) }
+
+        WeeklyStreakTrackerCard(
+            userProfile = userProfile,
+            onOpenMockExam = { viewModel.startMockExam(selectedStd) },
+            onOpenFocusTimer = { showStudyTimerDialog = true },
+            onOpenFormulaVault = { showFormulaVaultDialog = true }
+        )
+
+        // 3.5. QUICK CHALLENGES & ARENA HUB (Compact Grid)
 
         Column(
             modifier = Modifier
@@ -910,6 +927,80 @@ fun HomeScreen(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+                    }
+                }
+            }
+
+            // Row 4: Full Board Mock Exam Simulator
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { viewModel.startMockExam(selectedStd) }
+                    .testTag("home_mock_exam_card"),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isDark) Color(0xFF1E1B4B) else Color(0xFFEEF2FF)
+                ),
+                border = BorderStroke(1.dp, if (isDark) Color(0xFF4338CA) else Color(0xFFC7D2FE))
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF6366F1)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("📝", fontSize = 20.sp)
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Board Mock Exam Simulator",
+                                    fontSize = 13.5.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = if (isDark) Color(0xFFE0E7FF) else Color(0xFF1E1B4B)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = Color(0xFF10B981)
+                                ) {
+                                    Text(
+                                        text = "NEW",
+                                        fontSize = 8.5.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "Std $selectedStd • 20 questions, countdown palette & diagnostic report card",
+                                fontSize = 10.5.sp,
+                                color = if (isDark) Color(0xFFA5B4FC) else Color(0xFF4F46E5),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = { viewModel.startMockExam(selectedStd) },
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text("Start Test", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
             }

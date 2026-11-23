@@ -111,6 +111,29 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        com.example.billing.SubscriptionManager.getInstance(applicationContext).refreshPurchases(showFeedback = false)
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN ||
+            level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW
+        ) {
+            QuestionBankCache.clear()
+            com.example.audio.SoundEffectsManager.releaseResources()
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onLowMemory() {
+        super.onLowMemory()
+        QuestionBankCache.clear()
+        com.example.audio.SoundEffectsManager.releaseResources()
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -134,12 +157,15 @@ fun MainContentNavigator(
     val dailyChallengeState by viewModel.dailyChallengeState.collectAsState()
     val battleArenaState by viewModel.battleArenaState.collectAsState()
     val blitzState by viewModel.blitzState.collectAsState()
+    val mockExamState by viewModel.mockExamState.collectAsState()
     val mistakes by viewModel.mistakesList.collectAsState()
     var showBookmarksVault by remember { mutableStateOf(false) }
     var showStudyTimer by remember { mutableStateOf(false) }
     var showMistakeVault by remember { mutableStateOf(false) }
     var showAuthDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var showSubscriptionPaywall by remember { mutableStateOf(false) }
+    val subscriptionState by viewModel.subscriptionUiState.collectAsState()
 
     var activeScreenRoute by remember { mutableStateOf("home") } // "home", "dashboard", "leaderboard", "admin"
     var showNotificationsDropdown by remember { mutableStateOf(false) }
@@ -185,11 +211,18 @@ fun MainContentNavigator(
         BackHandler(enabled = blitzState.isActive) {
             viewModel.exitQuizBlitz()
         }
-        BackHandler(enabled = !showNotificationsDropdown && !activeQuizState.isPlaying && !flashcardState.isActive && !battleArenaState.isActive && !blitzState.isActive && activeScreenRoute != "home") {
+        BackHandler(enabled = mockExamState.isActive) {
+            viewModel.exitMockExam()
+        }
+        BackHandler(enabled = !showNotificationsDropdown && !activeQuizState.isPlaying && !flashcardState.isActive && !battleArenaState.isActive && !blitzState.isActive && !mockExamState.isActive && activeScreenRoute != "home") {
             activeScreenRoute = "home"
         }
 
         val isAuthCompleted by viewModel.isStartupAuthCompleted.collectAsState()
+
+        BackHandler(enabled = showSubscriptionPaywall && subscriptionState.hasFullAccess) {
+            showSubscriptionPaywall = false
+        }
 
         // If startup role-based auth is not completed, display StartupAuthScreen gate
         if (!isAuthCompleted) {
@@ -197,10 +230,32 @@ fun MainContentNavigator(
                 viewModel = viewModel,
                 onAuthComplete = { /* StateFlow in ViewModel triggers transition */ }
             )
+        } else if (!subscriptionState.hasFullAccess || showSubscriptionPaywall) {
+            // Enforce ₹20/month Google Play Subscription once the 7-day free trial ends,
+            // or allow viewing/upgrading early when opened from Home or Settings.
+            com.example.ui.billing.SubscriptionPaywallScreen(
+                subscriptionState = subscriptionState,
+                isDismissible = subscriptionState.hasFullAccess,
+                onSubscribeClick = { activity -> viewModel.launchSubscriptionPurchase(activity) },
+                onRestorePurchasesClick = { viewModel.restoreSubscriptionPurchases() },
+                onManageSubscriptionClick = { viewModel.openManageSubscription(context) },
+                onDismiss = { showSubscriptionPaywall = false }
+            )
         } else if (activeQuizState.isPlaying) {
             QuizScreen(
                 viewModel = viewModel,
                 onExitQuiz = { viewModel.exitQuiz() }
+            )
+        } else if (mockExamState.isActive) {
+            com.example.ui.exam.MockExamSimulatorScreen(
+                state = mockExamState,
+                onSelectAnswer = { idx, ans -> viewModel.selectMockExamAnswer(idx, ans) },
+                onToggleReview = { idx -> viewModel.toggleMockExamReview(idx) },
+                onClearAnswer = { idx -> viewModel.clearMockExamAnswer(idx) },
+                onJumpToQuestion = { idx -> viewModel.jumpToMockExamQuestion(idx) },
+                onSubmitExam = { viewModel.submitMockExam() },
+                onExitExam = { viewModel.exitMockExam() },
+                onRetakeExam = { viewModel.startMockExam(mockExamState.stdId, mockExamState.subjectId) }
             )
         } else if (flashcardState.isActive) {
             FlashcardScreen(
@@ -558,7 +613,9 @@ fun MainContentNavigator(
                             languageSettingsProvider = languageSettingsProvider,
                             onStartQuiz = { stdId, subjectId, unitId, name ->
                                 viewModel.startQuiz(stdId, subjectId, unitId, name)
-                            }
+                            },
+                            onOpenProfile = { activeScreenRoute = "profile" },
+                            onOpenSubscription = { showSubscriptionPaywall = true }
                         )
                         "dashboard" -> DashboardScreen(
                             viewModel = viewModel
@@ -778,6 +835,74 @@ fun MainContentNavigator(
                                                 imageVector = Icons.Default.ChevronRight,
                                                 contentDescription = null,
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+
+                                    // 7-Day Free Trial & ₹20/Month Subscription Settings Card
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                showSettingsDialog = false
+                                                showSubscriptionPaywall = true
+                                            }
+                                            .testTag("settings_subscription_card"),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
+                                        )
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(38.dp)
+                                                        .clip(CircleShape)
+                                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.WorkspacePremium,
+                                                        contentDescription = "Subscription",
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(22.dp)
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.width(10.dp))
+                                                Column {
+                                                    Text(
+                                                        text = "7-Day Trial & Monthly Pass",
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 13.sp,
+                                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                    )
+                                                    val subSubtitle = when (val acc = subscriptionState.accessState) {
+                                                        is com.example.billing.SubscriptionAccessState.Subscribed -> "Active (${acc.formattedPrice})"
+                                                        is com.example.billing.SubscriptionAccessState.FreeTrialActive -> "${acc.daysRemaining} day(s) left • Then ${acc.formattedPrice}"
+                                                        is com.example.billing.SubscriptionAccessState.TrialExpired -> "Trial ended • Subscribe ${acc.formattedPrice}"
+                                                    }
+                                                    Text(
+                                                        text = subSubtitle,
+                                                        fontSize = 11.sp,
+                                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                                    )
+                                                }
+                                            }
+                                            Icon(
+                                                imageVector = Icons.Default.ChevronRight,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                                 modifier = Modifier.size(20.dp)
                                             )
                                         }

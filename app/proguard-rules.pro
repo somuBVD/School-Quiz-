@@ -12,25 +12,27 @@
 #   public *;
 #}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
+# Preserve line numbers for Google Play Console automatic crash deobfuscation
 -keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# Room Database and SQLite keep rules
--keep class * extends androidx.room.RoomDatabase
--dontwarn androidx.room.paging.**
--keep @androidx.room.Entity class * { *; }
--keep @androidx.room.Dao interface * { *; }
--keepclassmembers class * {
-    @androidx.room.PrimaryKey *;
-    @androidx.room.ColumnInfo *;
+# Room Database reflection target (QuizDatabase_Impl lookup by Room.databaseBuilder)
+-keep class * extends androidx.room.RoomDatabase {
+    <init>(...);
 }
--keep class com.example.data.** { *; }
+-dontwarn androidx.room.paging.**
 
-# WorkManager Worker classes
+# WorkManager ListenableWorker constructors instantiated via reflection
 -keep class * extends androidx.work.ListenableWorker {
     public <init>(android.content.Context, androidx.work.WorkerParameters);
 }
--keep class com.example.notification.** { *; }
--keep class com.example.sync.** { *; }
+
+# Jetpack Credential Manager & Google Sign-In (loaded via reflection in Play Services provider)
+-keep class androidx.credentials.playservices.** { *; }
+-keep class * implements androidx.credentials.CredentialProvider {
+    public <init>(android.content.Context);
+}
+-keep class com.google.android.libraries.identity.googleid.** { *; }
+-keepclassmembers class com.google.firebase.auth.** { *; }
+
 

@@ -9,7 +9,8 @@ package com.example.data
  */
 object Std10SocialQuestionBankPart1 {
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = listOf(
         // ==========================================
         // ಅಧ್ಯಾಯ 1: ಭಾರತಕ್ಕೆ ಯುರೋಪಿಯನ್ನರ ಆಗಮನ (Unit 1)
         // ==========================================

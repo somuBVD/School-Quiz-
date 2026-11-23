@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -31,6 +32,7 @@ import androidx.compose.ui.res.painterResource
 import com.example.R
 import com.example.QuizViewModel
 import com.example.auth.AuthUiState
+import com.example.auth.FirebaseAuthManager
 import com.example.auth.UserRole
 
 /**
@@ -57,6 +59,7 @@ fun StartupAuthScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
@@ -65,6 +68,9 @@ fun StartupAuthScreen(
     val emeraldAccent = Color(0xFF10B981)
     val amberAccent = Color(0xFFF59E0B)
 
+    val isTeacherLocked = FirebaseAuthManager.IS_TEACHER_AUTH_LOCKED
+    val isAdminLocked = FirebaseAuthManager.IS_ADMIN_AUTH_LOCKED
+
     // Watch for successful authentication to unlock the app
     LaunchedEffect(authState) {
         if (authState is AuthUiState.Authenticated) {
@@ -72,9 +78,11 @@ fun StartupAuthScreen(
         }
     }
 
-    // Admin role is locked for new registrations; ensure selectedRole resets to STUDENT in register mode
-    LaunchedEffect(isSignUpMode) {
-        if (isSignUpMode && selectedRole == UserRole.ADMIN) {
+    // Ensure selectedRole stays STUDENT whenever Teacher or Admin roles are locked
+    LaunchedEffect(isSignUpMode, isTeacherLocked, isAdminLocked) {
+        if ((isAdminLocked && selectedRole == UserRole.ADMIN) ||
+            (isTeacherLocked && selectedRole == UserRole.TEACHER)
+        ) {
             selectedRole = UserRole.STUDENT
         }
     }
@@ -230,6 +238,111 @@ fun StartupAuthScreen(
                         .padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
+                    // Primary Student Google Sign-In for Cloud Sync & Live 1 vs 1 Battle Arena
+                    val isAuthLoading = authState is AuthUiState.Loading
+                    Button(
+                        onClick = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                            val googleRole = if (
+                                (isAdminLocked && selectedRole == UserRole.ADMIN) ||
+                                (isTeacherLocked && selectedRole == UserRole.TEACHER)
+                            ) {
+                                UserRole.STUDENT
+                            } else {
+                                selectedRole
+                            }
+                            viewModel.signInWithGoogle(
+                                activityContext = context,
+                                role = googleRole,
+                                standard = selectedStandard,
+                                onSuccess = onAuthComplete
+                            )
+                        },
+                        enabled = !isAuthLoading,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isDark) Color.White else Color(0xFF111827),
+                            contentColor = if (isDark) Color(0xFF111827) else Color.White
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .testTag("startup_google_signin_button")
+                    ) {
+                        if (isAuthLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = if (isDark) Color(0xFF111827) else Color.White,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Signing in with Google...",
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 13.sp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "Google Sign-In",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Continue with Google (Student)",
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+
+                    // Prominent error banner directly below Google Sign-In so errors are never hidden
+                    val authError = (authState as? AuthUiState.Error)?.message
+                    if (!authError.isNullOrBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color(0xFFEF4444).copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.35f)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("startup_auth_error_banner")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = "Authentication error",
+                                    tint = Color(0xFFDC2626),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = authError,
+                                    fontSize = 11.5.sp,
+                                    color = Color(0xFFDC2626),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+                        Text(
+                            text = "  OR LOCAL PROFILE  ",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+                    }
+
                     if (isSignUpMode) {
                         // ROLE SELECTION HEADER
                         Text(
@@ -255,14 +368,15 @@ fun StartupAuthScreen(
                                 modifier = Modifier.weight(1f)
                             )
 
-                            // Teacher Option
+                            // Teacher Option (Locked by policy — set FirebaseAuthManager.IS_TEACHER_AUTH_LOCKED = false to open)
                             RoleSelectionPill(
                                 title = "Teacher",
                                 icon = "👨‍🏫",
-                                subtitle = "Question Bank",
-                                isSelected = selectedRole == UserRole.TEACHER,
+                                subtitle = if (isTeacherLocked) "Locked" else "Question Bank",
+                                isSelected = selectedRole == UserRole.TEACHER && !isTeacherLocked,
                                 activeColor = emeraldAccent,
-                                onClick = { selectedRole = UserRole.TEACHER },
+                                onClick = { if (!isTeacherLocked) selectedRole = UserRole.TEACHER },
+                                isLocked = isTeacherLocked,
                                 modifier = Modifier.weight(1f)
                             )
 
@@ -274,12 +388,12 @@ fun StartupAuthScreen(
                                 isSelected = false,
                                 activeColor = amberAccent,
                                 onClick = { /* Locked - Admin accounts cannot register */ },
-                                isLocked = true,
+                                isLocked = isAdminLocked,
                                 modifier = Modifier.weight(1f)
                             )
                         }
 
-                        // Admin locked info note
+                        // Role lock info note
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
@@ -293,7 +407,11 @@ fun StartupAuthScreen(
                                 Text("🔒", fontSize = 11.sp)
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Admin role is locked: Admin accounts are pre-provisioned and cannot be newly registered.",
+                                    text = if (isTeacherLocked) {
+                                        "Teacher & Admin signup/login are currently locked. Students can sign in with Google or a Student account."
+                                    } else {
+                                        "Admin role is locked: Admin accounts are pre-provisioned and cannot be newly registered."
+                                    },
                                     fontSize = 10.5.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.Medium
@@ -411,31 +529,7 @@ fun StartupAuthScreen(
                             .testTag("startup_password_input")
                     )
 
-                    // Error banner if any
-                    val authError = (authState as? AuthUiState.Error)?.message
-                    val isApiKeyIssue = authError?.contains("api key", ignoreCase = true) == true || authError?.contains("internal error", ignoreCase = true) == true
-                    if (!authError.isNullOrBlank() && !isApiKeyIssue) {
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = Color(0xFFEF4444).copy(alpha = 0.12f),
-                            border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.3f)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("⚠️", fontSize = 14.sp)
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = authError,
-                                    fontSize = 11.sp,
-                                    color = Color(0xFFDC2626),
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-                    }
+                    // Error feedback is displayed directly below the Google Sign-In button above.
 
                     // Primary Submit Button
                     val isLoading = authState is AuthUiState.Loading
@@ -505,7 +599,6 @@ fun StartupAuthScreen(
                                 keyboardController?.hide()
                                 focusManager.clearFocus()
                                 viewModel.signInDemoStudent()
-                                onAuthComplete()
                             },
                             shape = RoundedCornerShape(10.dp),
                             contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
@@ -517,21 +610,48 @@ fun StartupAuthScreen(
                             Text("🎓 Student", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                         }
 
+                        // Teacher demo chip is locked while FirebaseAuthManager.IS_TEACHER_AUTH_LOCKED is true
                         OutlinedButton(
                             onClick = {
-                                keyboardController?.hide()
-                                focusManager.clearFocus()
-                                viewModel.signInDemoTeacher()
-                                onAuthComplete()
+                                if (!isTeacherLocked) {
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
+                                    viewModel.signInDemoTeacher()
+                                }
                             },
+                            enabled = !isTeacherLocked,
                             shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                disabledContainerColor = if (isDark) Color(0xFF1E293B).copy(alpha = 0.5f) else Color(0xFFF1F5F9),
+                                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            ),
+                            border = if (isTeacherLocked) {
+                                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            } else {
+                                ButtonDefaults.outlinedButtonBorder(enabled = true)
+                            },
                             contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
                             modifier = Modifier
                                 .weight(1f)
                                 .height(38.dp)
                                 .testTag("startup_demo_teacher_button")
                         ) {
-                            Text("👨‍🏫 Teacher", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                            if (isTeacherLocked) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Lock,
+                                        contentDescription = "Teacher Locked",
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("Teacher", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                            } else {
+                                Text("👨‍🏫 Teacher", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                            }
                         }
 
                         // Admin demo chip is locked/inactive in both Register and Existing layouts

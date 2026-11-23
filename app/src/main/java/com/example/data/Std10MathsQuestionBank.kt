@@ -42,6 +42,8 @@ object Std10MathsQuestionBank {
         UnitTemplate(14, "ಘಟಕ 14: ಸಂಭವನೀಯತೆ", 16, "Easy")
     )
 
-    val questions: List<QuestionModel> =
-        Std10MathsQuestionBankPart1.questions + Std10MathsQuestionBankPart2.questions
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std10Maths") {
+            Std10MathsQuestionBankPart1.questions + Std10MathsQuestionBankPart2.questions
+        }
 }

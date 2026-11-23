@@ -38,7 +38,9 @@ object Std8KannadaQuestionBank {
         UnitTemplate(15, "ಅಧ್ಯಾಯ 15: ಸೀಮ", 5, "Easy")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std8Kannada") {
+            listOf(
         // ==========================================
         // ಅಧ್ಯಾಯ 1 — ಮಗೆದ ಸಾಹೇಬ (15 ಪ್ರಶ್ನೆಗಳು)
         // ==========================================
@@ -1624,4 +1626,5 @@ object Std8KannadaQuestionBank {
             explanation = "ಜೀವ ನೀಡುವ ಹಣ್ಣಿನ ಮರವನ್ನು ಎಂದಿಗೂ ಕಡಿಯಬಾರದು ಎಂದು ಎಚ್ಚರಿಸಿದಳು."
         )
     )
+        }
 }

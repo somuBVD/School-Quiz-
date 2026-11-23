@@ -20,7 +20,9 @@ object Std8EnglishQuestionBank {
         UnitTemplate(10, "Additional Practice: Prose & Poetry Conversions", 14, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std8English") {
+            listOf(
         // ========================================================
         // 🟦 UNIT 1 – A DAY IN THE ASHRAM & POEM – BEAUTY
         // ========================================================
@@ -3531,4 +3533,5 @@ object Std8EnglishQuestionBank {
             explanation = "Her journey from an impoverished village textile worker to a space pioneer proves that dedication and grit conquer all obstacles."
         )
     )
+        }
 }

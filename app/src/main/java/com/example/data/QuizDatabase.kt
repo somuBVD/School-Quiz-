@@ -122,8 +122,8 @@ abstract class QuizDatabase : RoomDatabase() {
 
             // 2. Prepopulate Default Quiz Questions into Local Database
             questionDao?.let { qDao ->
-                // Keep Room database lean (initial sample) to prevent SQLite CursorWindow buffer overflow
-                val initialSample = QuizStaticData.staticQuestions.take(50).map { qModel ->
+                // Keep Room database lean (initial sample) to prevent SQLite CursorWindow buffer overflow and startup RAM spikes
+                val initialSample = QuizStaticData.coreStaticQuestions.take(50).map { qModel ->
                     qModel.toQuizQuestionEntity(
                         unitName = "Unit ${qModel.unitId}",
                         difficulty = "Medium",

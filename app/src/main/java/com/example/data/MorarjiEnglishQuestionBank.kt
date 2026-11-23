@@ -16,7 +16,9 @@ object MorarjiEnglishQuestionBank {
         UnitTemplate(7, "Unit 7: Animals, Sounds, Shelters & Everyday Usage", 24, "Easy")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("MorarjiEnglish") {
+            listOf(
         // ========================================================
         // Unit 1: Prose, Poetry, Comprehension & Stories
         // ========================================================
@@ -2778,4 +2780,5 @@ object MorarjiEnglishQuestionBank {
             explanation = "A snake lives in a burrow."
         )
     )
+        }
 }

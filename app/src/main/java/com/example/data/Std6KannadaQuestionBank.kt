@@ -28,7 +28,9 @@ object Std6KannadaQuestionBank {
         UnitTemplate(13, "ಪದ್ಯಪಾಠ–13: ಹೃದಯ ವಚನಗಳು", 2, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std6Kannada") {
+            listOf(
         // ========================================================
         // 🟦 ಗದ್ಯಪಾಠ
         // ========================================================
@@ -907,6 +909,7 @@ object Std6KannadaQuestionBank {
             explanation = "ಖಾಲಿ ಸ್ಥಳಕ್ಕೆ ಸೂಕ್ತವಾದ ಪದ ‘ಹೆಣ್ಣಾಗಿ’."
         )
     )
+        }
 
     /**
      * Uploads all consolidated Std 6 Kannada questions to Firebase Firestore under collection `quiz_questions`.

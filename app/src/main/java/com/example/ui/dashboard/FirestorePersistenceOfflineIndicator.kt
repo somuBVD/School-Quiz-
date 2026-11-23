@@ -145,7 +145,7 @@ fun FirestorePersistenceOfflineIndicator(
                             text = if (isOffline) {
                                 "Serving & storing via Firestore disk cache setting"
                             } else {
-                                "Unlimited offline cache active & ready"
+                                "50 MB offline cache active & ready"
                             },
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
@@ -206,7 +206,7 @@ fun FirestorePersistenceOfflineIndicator(
             ) {
                 PersistenceStatusChip(
                     icon = Icons.Default.SdStorage,
-                    label = "Disk: Unlimited",
+                    label = "Disk: 50 MB",
                     tint = borderColor,
                     isDark = isDark,
                     modifier = Modifier.weight(1f)

@@ -38,7 +38,9 @@ object Std8MathsQuestionBank {
         UnitTemplate(14, "ಅಧ್ಯಾಯ 14: ವಿಸ್ತೀರ್ಣ", 20, "Medium")
     )
 
-    val questions: List<QuestionModel> = (listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std8Maths") {
+            (listOf(
         // ========================================================
         // 🟦 ಅಧ್ಯಾಯ 1: ವರ್ಗಸಂಖ್ಯೆ ಮತ್ತು ಘನಸಂಖ್ಯೆ
         // ========================================================
@@ -3998,6 +4000,7 @@ object Std8MathsQuestionBank {
             explanation = "ಸರಿಯಾದ ಉತ್ತರ: A) ½h(a + b)."
         )
     ) + Std8MathsChapters345Bank.chapter3Questions + Std8MathsChapters345Bank.chapter4Questions + Std8MathsChapters345Bank.chapter5Questions).sortedBy { it.unitId }
+        }
 
     suspend fun uploadToFirestore(cloudSyncManager: com.example.auth.FirebaseCloudSyncManager): Result<Int> {
         return cloudSyncManager.syncQuestionModelsToCloud(questions)

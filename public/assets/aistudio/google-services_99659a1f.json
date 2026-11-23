@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "660044042159",
+    "project_id": "gen-lang-client-0355863001",
+    "storage_bucket": "gen-lang-client-0355863001.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:660044042159:android:f9791e429dbfc23228695a",
+        "android_client_info": {
+          "package_name": "com.aistudio.schoolquiz.qyvxrt"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "660044042159-djk9hcd3v3i9bnpeki15d2llupvg0pca.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aistudio.schoolquiz.qyvxrt",
+            "certificate_hash": "e18a37dc557b97570038dfd90ed2856da956aaa6"
+          }
+        },
+        {
+          "client_id": "660044042159-vushbd09lno4cirvumgj6m127cvus92n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aistudio.schoolquiz.qyvxrt",
+            "certificate_hash": "2eb2ec69b35e552b385d55a23751742dc1bab29b"
+          }
+        },
+        {
+          "client_id": "660044042159-5hit524ailtvriqagfjbvu9r5ull491m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrQ6wsTcWETrool90bZ7BaEOSezZWMmEA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "660044042159-5hit524ailtvriqagfjbvu9r5ull491m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

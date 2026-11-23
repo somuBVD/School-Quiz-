@@ -41,7 +41,9 @@ object Std9ScienceQuestionBank {
         UnitTemplate(15, "ಅಧ್ಯಾಯ 15: ಆಹಾರ ಸಂಪನ್ಮೂಲಗಳ ಸುಧಾರಣೆ", 16, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std9Science") {
+            listOf(
         QuestionModel(
             id = "std9_sci_u1_q1",
             stdId = 9,
@@ -2923,4 +2925,5 @@ object Std9ScienceQuestionBank {
             mediaRes = ""
         )
     )
+        }
 }

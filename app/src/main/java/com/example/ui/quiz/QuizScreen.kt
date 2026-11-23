@@ -164,7 +164,7 @@ fun QuizScreen(
                         )
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
                                 text = "${strings.question} ${quizState.currentIndex + 1}/${quizState.totalQuestions}",
@@ -174,6 +174,30 @@ fun QuizScreen(
                                 overflow = TextOverflow.Ellipsis,
                                 color = Color(0xFF475569)
                             )
+                            if (isCountdownTimerEnabled && !quizState.isAnswerSubmitted) {
+                                val elapsed = (quizState.totalTimeLimitSeconds - quizState.secondsRemaining).coerceAtLeast(0)
+                                val zone = TimeThresholdZone.forElapsedSeconds(elapsed)
+                                val zoneColor = Color(zone.colorHex)
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = zoneColor.copy(alpha = 0.15f),
+                                    border = BorderStroke(1.dp, zoneColor.copy(alpha = 0.5f)),
+                                    modifier = Modifier.testTag("topbar_timer_chip")
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                    ) {
+                                        Text(
+                                            text = "${zone.badgeEmoji} ${quizState.secondsRemaining}s",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = zoneColor
+                                        )
+                                    }
+                                }
+                            }
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
                                 color = Color(0xFF10B981).copy(alpha = 0.15f)
@@ -317,7 +341,16 @@ fun QuizScreen(
                             onClearMatchItem = { viewModel.clearMatchItem(it) },
                             onSubmitAnswer = { viewModel.submitQuizAnswer() },
                             onSkipQuestion = { viewModel.skipCurrentQuestion() },
-                            onNextQuestion = { viewModel.goToNextQuestion() }
+                            onNextQuestion = { viewModel.goToNextQuestion() },
+                            onSelectTimeLimit = { viewModel.setQuizQuestionTimeLimit(it) },
+                            onToggleTimer = {
+                                isCountdownTimerEnabled = !isCountdownTimerEnabled
+                                Toast.makeText(
+                                    context,
+                                    if (isCountdownTimerEnabled) "⏱️ Timed Challenge (${quizState.totalTimeLimitSeconds}s)" else "🌱 Untimed Practice",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         )
                     } else {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -342,7 +375,9 @@ fun ActiveQuizPlaySheet(
     onClearMatchItem: (Int) -> Unit,
     onSubmitAnswer: () -> Unit,
     onSkipQuestion: () -> Unit,
-    onNextQuestion: () -> Unit
+    onNextQuestion: () -> Unit,
+    onSelectTimeLimit: ((Int) -> Unit)? = null,
+    onToggleTimer: (() -> Unit)? = null
 ) {
     val scrollState = rememberScrollState()
     val strings = LocalAppStrings.current
@@ -361,7 +396,9 @@ fun ActiveQuizPlaySheet(
                 totalSeconds = quizState.totalTimeLimitSeconds,
                 isAnswerSubmitted = quizState.isAnswerSubmitted,
                 isReviewMarked = quizState.markedForReview.contains(quizState.currentIndex),
-                isTimerEnabled = isTimerEnabled
+                isTimerEnabled = isTimerEnabled,
+                onSelectTimeLimit = onSelectTimeLimit,
+                onToggleTimer = onToggleTimer
             )
 
             // QUESTION CARD DISPLAY

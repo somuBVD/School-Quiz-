@@ -26,7 +26,9 @@ object Std7SciencePart2QuestionBank {
         UnitTemplate(12, "ಘಟಕ 12: ಭೂಮಿ, ಚಂದ್ರ ಮತ್ತು ಸೂರ್ಯ", 14, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std7SciencePart2") {
+            listOf(
         // ==================== ಘಟಕ 7: ನಿಸರ್ಗದಲ್ಲಿ ಉಷ್ಣ ವರ್ಗಾವಣೆ ====================
         QuestionModel(
             id = "s_7_sci_u7_1",
@@ -444,4 +446,5 @@ object Std7SciencePart2QuestionBank {
             explanation = "Synchronous rotation ಕಾರಣದಿಂದ ಚಂದ್ರನ ಅದೇ ಮುಖ ಸದಾ ಭೂಮಿಯ ಕಡೆಗೆ ಮುಖ ಮಾಡಿರುತ್ತದೆ."
         )
     )
+        }
 }

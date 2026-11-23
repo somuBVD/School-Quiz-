@@ -14,7 +14,9 @@ object MorarjiGKQuestionBank {
         UnitTemplate(5, "ಘಟಕ 5: ಕ್ರೀಡೆಗಳು, ಆಟಗಾರರು ಮತ್ತು ಪ್ರಸಿದ್ಧ ವ್ಯಕ್ತಿಗಳು", 15, "Easy")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("MorarjiGK") {
+            listOf(
         // ========================================================
         // ಘಟಕ 1: ನಮ್ಮ ಕರ್ನಾಟಕ — ಇತಿಹಾಸ, ಸಂಸ್ಕೃತಿ ಮತ್ತು ಹೆಗ್ಗುರುತುಗಳು (47 Questions)
         // ========================================================
@@ -1571,4 +1573,5 @@ object MorarjiGKQuestionBank {
             explanation = "ಸರಿಯಾದ ಉತ್ತರ: ಹಾಕಿ."
         )
     )
+        }
 }

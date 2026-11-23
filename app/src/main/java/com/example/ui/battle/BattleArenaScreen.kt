@@ -41,6 +41,8 @@ fun BattleArenaScreen(
     val battleState by viewModel.battleArenaState.collectAsState()
     val isDark by viewModel.isDarkMode.collectAsState()
     val userProfile by viewModel.userProfile.collectAsState()
+    val isFirebaseGoogleSignedIn by viewModel.isFirebaseGoogleSignedIn.collectAsState()
+    val authUiState by viewModel.authUiState.collectAsState()
     val strings = LocalAppStrings.current
     val context = LocalContext.current
 
@@ -132,12 +134,19 @@ fun BattleArenaScreen(
             ) { stage ->
                 when (stage) {
                     BattleStage.LOBBY -> {
+                        val signedInUser = (authUiState as? com.example.auth.AuthUiState.Authenticated)?.user
+                        val authError = (authUiState as? com.example.auth.AuthUiState.Error)?.message
                         BattleLobbyView(
                             battleState = battleState,
+                            isFirebaseGoogleSignedIn = isFirebaseGoogleSignedIn,
+                            signedInDisplayName = signedInUser?.displayName ?: userProfile?.name ?: "Student",
+                            authErrorMessage = authError,
+                            onSignInWithGoogle = { viewModel.signInWithGoogle(context) },
                             onSelectSubject = { viewModel.selectBattleSubject(it) },
                             onStartMatchmaking = { viewModel.findBattleMatch() },
                             onHostRoom = { viewModel.createPrivateBattleRoom() },
                             onJoinRoom = { code -> viewModel.findBattleMatch(code) },
+                            onPracticeWithAi = { viewModel.startAiBattleChallenger() },
                             isDark = isDark
                         )
                     }
@@ -175,10 +184,15 @@ fun BattleArenaScreen(
 @Composable
 fun BattleLobbyView(
     battleState: BattleArenaState,
+    isFirebaseGoogleSignedIn: Boolean,
+    signedInDisplayName: String,
+    authErrorMessage: String?,
+    onSignInWithGoogle: () -> Unit,
     onSelectSubject: (String) -> Unit,
     onStartMatchmaking: () -> Unit,
     onHostRoom: () -> Unit,
     onJoinRoom: (String) -> Unit,
+    onPracticeWithAi: () -> Unit,
     isDark: Boolean
 ) {
     var roomInput by remember { mutableStateOf("") }
@@ -227,6 +241,109 @@ fun BattleLobbyView(
                     )
                 }
                 Text("⚔️", fontSize = 48.sp)
+            }
+        }
+
+        // Firebase Auth & Named Cloud Firestore Connection Status Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("battle_firebase_status_card"),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isFirebaseGoogleSignedIn) {
+                    Color(0xFF10B981).copy(alpha = 0.12f)
+                } else {
+                    Color(0xFFF59E0B).copy(alpha = 0.14f)
+                }
+            ),
+            border = BorderStroke(
+                1.dp,
+                if (isFirebaseGoogleSignedIn) Color(0xFF10B981) else Color(0xFFF59E0B)
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isFirebaseGoogleSignedIn) Icons.Default.VerifiedUser else Icons.Default.CloudOff,
+                        contentDescription = null,
+                        tint = if (isFirebaseGoogleSignedIn) Color(0xFF059669) else Color(0xFFD97706),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (isFirebaseGoogleSignedIn) {
+                                "Firebase 1v1 Arena Connected"
+                            } else {
+                                "Google Sign-In Required for Online 1v1"
+                            },
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = if (isFirebaseGoogleSignedIn) {
+                                "Signed in as $signedInDisplayName • Live Firestore rooms ready"
+                            } else {
+                                "Sign in with Google to battle real students online, or practice offline against AI."
+                            },
+                            fontSize = 11.5.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                if (!isFirebaseGoogleSignedIn) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = onSignInWithGoogle,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .testTag("battle_google_signin_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Sign in with Google", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+                        OutlinedButton(
+                            onClick = onPracticeWithAi,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .height(48.dp)
+                                .testTag("battle_ai_practice_button")
+                        ) {
+                            Text("AI Practice", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                        }
+                    }
+                }
+
+                val bannerText = authErrorMessage?.takeIf { it.isNotBlank() }
+                    ?: battleState.statusMessage.takeIf { it.isNotBlank() }
+                if (bannerText != null) {
+                    Text(
+                        text = bannerText,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (authErrorMessage != null) Color(0xFFDC2626) else MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
 

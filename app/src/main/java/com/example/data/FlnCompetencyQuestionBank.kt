@@ -16,7 +16,9 @@ object FlnCompetencyQuestionBank {
         UnitTemplate(3, "ಘಟಕ 3: ಮೂಲಭೂತ ಸಂಖ್ಯಾಜ್ಞಾನ & ಗಣಿತ (FLN Numeracy & Mathematics)", 20, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("FlnCompetency") {
+            listOf(
         // =========================================================================
         // =========================== 6 STD KANNADA (20 MCQs) =====================
         // =========================================================================
@@ -3373,4 +3375,5 @@ object FlnCompetencyQuestionBank {
             explanation = "ಲ.ಸಾ.ಅ. × ಮ.ಸಾ.ಅ. = ಸಂಖ್ಯೆ1 × ಸಂಖ್ಯೆ2 => 36 × 6 = 12 × x => 216 / 12 = 18."
         )
     )
+        }
 }

@@ -17,7 +17,9 @@ object Std7EnglishQuestionBank {
         UnitTemplate(8, "Unit 8: Wealth and Values & The Quarrel", 12, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std7English") {
+            listOf(
         // ========================================================
         // 🟦 UNIT 1: Healthy Life (Prose) & The Gymnastic Clock (Poem)
         // ========================================================
@@ -1117,4 +1119,5 @@ object Std7EnglishQuestionBank {
             explanation = "The curriculum aims at holistic character building, moral values, linguistic proficiency, and social empathy."
         )
     )
+        }
 }

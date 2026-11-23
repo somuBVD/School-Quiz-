@@ -48,7 +48,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 1: ರಾಸಾಯನಿಕ ಕ್ರಿಯೆಗಳು ಮತ್ತು ಸಮೀಕರಣಗಳು
     // ========================================================
-    private val u1Questions = listOf(
+    private fun u1Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u1_1",
             stdId = 10,
@@ -219,7 +219,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 2: ಆಮ್ಲಗಳು, ಪ್ರತ್ಯಾಮ್ಲಗಳು ಮತ್ತು ಲವಣಗಳು
     // ========================================================
-    private val u2Questions = listOf(
+    private fun u2Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u2_1",
             stdId = 10,
@@ -390,7 +390,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 3: ಲೋಹಗಳು ಮತ್ತು ಅಲೋಹಗಳು
     // ========================================================
-    private val u3Questions = listOf(
+    private fun u3Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u3_1",
             stdId = 10,
@@ -561,7 +561,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 4: ಕಾರ್ಬನ್ ಮತ್ತು ಅದರ ಸಂಯುಕ್ತಗಳು
     // ========================================================
-    private val u4Questions = listOf(
+    private fun u4Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u4_1",
             stdId = 10,
@@ -732,7 +732,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 5: ಧಾತುಗಳ ಆವರ್ತನೀಯ ವರ್ಗೀಕರಣ
     // ========================================================
-    private val u5Questions = listOf(
+    private fun u5Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u5_1",
             stdId = 10,
@@ -903,7 +903,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 6: ಜೀವಕ್ರಿಯೆಗಳು
     // ========================================================
-    private val u6Questions = listOf(
+    private fun u6Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u6_1",
             stdId = 10,
@@ -1085,7 +1085,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 7: ನಿಯಂತ್ರಣ ಮತ್ತು ಸಹಭಾಗಿತ್ವ
     // ========================================================
-    private val u7Questions = listOf(
+    private fun u7Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u7_1",
             stdId = 10,
@@ -1256,7 +1256,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 8: ಜೀವಿಗಳು ಹೇಗೆ ಸಂತಾನೋತ್ಪತ್ತಿ ನಡೆಸುತ್ತವೆ?
     // ========================================================
-    private val u8Questions = listOf(
+    private fun u8Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u8_1",
             stdId = 10,
@@ -1427,7 +1427,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 9: ಅನುವಂಶೀಯತೆ ಮತ್ತು ಜೀವ ವಿಕಾಸ
     // ========================================================
-    private val u9Questions = listOf(
+    private fun u9Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u9_1",
             stdId = 10,
@@ -1598,7 +1598,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 10: ಬೆಳಕು - ಪ್ರತಿಫಲನ ಮತ್ತು ವಕ್ರೀಭವನ
     // ========================================================
-    private val u10Questions = listOf(
+    private fun u10Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u10_1",
             stdId = 10,
@@ -1780,7 +1780,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 11: ಮಾನವನ ಕಣ್ಣು ಮತ್ತು ವರ್ಣಮಯ ಜಗತ್ತು
     // ========================================================
-    private val u11Questions = listOf(
+    private fun u11Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u11_1",
             stdId = 10,
@@ -1951,7 +1951,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 12: ವಿದ್ಯುಚ್ಛಕ್ತಿ
     // ========================================================
-    private val u12Questions = listOf(
+    private fun u12Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u12_1",
             stdId = 10,
@@ -2133,7 +2133,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 13: ವಿದ್ಯುತ್ ಪ್ರವಾಹದ ಕಾಂತೀಯ ಪರಿಣಾಮಗಳು
     // ========================================================
-    private val u13Questions = listOf(
+    private fun u13Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u13_1",
             stdId = 10,
@@ -2304,7 +2304,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 14: ಶಕ್ತಿಯ ಆಕರಗಳು
     // ========================================================
-    private val u14Questions = listOf(
+    private fun u14Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u14_1",
             stdId = 10,
@@ -2475,7 +2475,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 15: ನಮ್ಮ ಪರಿಸರ
     // ========================================================
-    private val u15Questions = listOf(
+    private fun u15Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u15_1",
             stdId = 10,
@@ -2646,7 +2646,7 @@ object Std10ScienceQuestionBank {
     // ========================================================
     // 🟦 ಅಧ್ಯಾಯ 16: ನೈಸರ್ಗಿಕ ಸಂಪನ್ಮೂಲಗಳ ಸುಸ್ಥಿರ ನಿರ್ವಹಣೆ
     // ========================================================
-    private val u16Questions = listOf(
+    private fun u16Questions() = listOf(
         QuestionModel(
             id = "s_10_sci_u16_1",
             stdId = 10,
@@ -2814,8 +2814,25 @@ object Std10ScienceQuestionBank {
         )
     )
 
-    val questions: List<QuestionModel> = u1Questions + u2Questions + u3Questions + u4Questions +
-            u5Questions + u6Questions + u7Questions + u8Questions +
-            u9Questions + u10Questions + u11Questions + u12Questions +
-            u13Questions + u14Questions + u15Questions + u16Questions
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std10Science") {
+            buildList {
+                addAll(u1Questions())
+                addAll(u2Questions())
+                addAll(u3Questions())
+                addAll(u4Questions())
+                addAll(u5Questions())
+                addAll(u6Questions())
+                addAll(u7Questions())
+                addAll(u8Questions())
+                addAll(u9Questions())
+                addAll(u10Questions())
+                addAll(u11Questions())
+                addAll(u12Questions())
+                addAll(u13Questions())
+                addAll(u14Questions())
+                addAll(u15Questions())
+                addAll(u16Questions())
+            }
+        }
 }

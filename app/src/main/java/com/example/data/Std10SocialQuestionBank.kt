@@ -78,5 +78,8 @@ object Std10SocialQuestionBank {
         UnitTemplate(33, "ಅಧ್ಯಾಯ 33: ಗ್ರಾಹಕ ಶಿಕ್ಷಣ ಮತ್ತು ರಕ್ಷಣೆ", 6, "Medium")
     )
 
-    val questions: List<QuestionModel> = Std10SocialQuestionBankPart1.questions + Std10SocialQuestionBankPart2.questions
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std10Social") {
+            Std10SocialQuestionBankPart1.questions + Std10SocialQuestionBankPart2.questions
+        }
 }

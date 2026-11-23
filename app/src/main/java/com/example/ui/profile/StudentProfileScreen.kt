@@ -98,24 +98,58 @@ fun StudentProfileScreen(
             coroutineScope.launch {
                 try {
                     val bytes = withContext(Dispatchers.IO) {
-                        context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                            val bitmap = BitmapFactory.decodeStream(inputStream)
-                            if (bitmap != null) {
-                                // Scale down if larger than 640px to ensure fast upload
-                                val maxDimension = 640
-                                val scale = (maxDimension.toFloat() / maxOf(bitmap.width, bitmap.height)).coerceAtMost(1f)
-                                val scaled = if (scale < 1f) {
-                                    Bitmap.createScaledBitmap(
-                                        bitmap,
-                                        (bitmap.width * scale).toInt(),
-                                        (bitmap.height * scale).toInt(),
-                                        true
-                                    )
-                                } else bitmap
+                        val maxDimension = 640
+                        // Pass 1: Read dimensions only without allocating pixel memory
+                        val boundsOptions = BitmapFactory.Options().apply {
+                            inJustDecodeBounds = true
+                        }
+                        context.contentResolver.openInputStream(uri)?.use { boundsStream ->
+                            BitmapFactory.decodeStream(boundsStream, null, boundsOptions)
+                        }
+                        val rawWidth = boundsOptions.outWidth
+                        val rawHeight = boundsOptions.outHeight
+                        var sampleSize = 1
+                        if (rawWidth > maxDimension || rawHeight > maxDimension) {
+                            while ((rawWidth / (sampleSize * 2)) >= maxDimension ||
+                                (rawHeight / (sampleSize * 2)) >= maxDimension
+                            ) {
+                                sampleSize *= 2
+                            }
+                        }
 
-                                val outputStream = ByteArrayOutputStream()
-                                scaled.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
-                                outputStream.toByteArray()
+                        // Pass 2: Decode downsampled bitmap using RGB_565 (50% less RAM than ARGB_8888)
+                        val decodeOptions = BitmapFactory.Options().apply {
+                            inSampleSize = sampleSize
+                            inPreferredConfig = Bitmap.Config.RGB_565
+                        }
+                        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                            val bitmap = BitmapFactory.decodeStream(inputStream, null, decodeOptions)
+                            if (bitmap != null) {
+                                var scaled: Bitmap? = null
+                                try {
+                                    val scale = (maxDimension.toFloat() / maxOf(bitmap.width, bitmap.height))
+                                        .coerceAtMost(1f)
+                                    scaled = if (scale < 1f) {
+                                        Bitmap.createScaledBitmap(
+                                            bitmap,
+                                            (bitmap.width * scale).toInt().coerceAtLeast(1),
+                                            (bitmap.height * scale).toInt().coerceAtLeast(1),
+                                            true
+                                        )
+                                    } else {
+                                        bitmap
+                                    }
+                                    val outputStream = ByteArrayOutputStream()
+                                    scaled.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
+                                    outputStream.toByteArray()
+                                } finally {
+                                    if (scaled != null && scaled !== bitmap && !scaled.isRecycled) {
+                                        scaled.recycle()
+                                    }
+                                    if (!bitmap.isRecycled) {
+                                        bitmap.recycle()
+                                    }
+                                }
                             } else null
                         }
                     }

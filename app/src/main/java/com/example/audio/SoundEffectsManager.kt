@@ -14,7 +14,9 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.PI
 import kotlin.math.exp
 import kotlin.math.sin
@@ -40,13 +42,30 @@ object SoundEffectsManager {
     private const val KEY_VIBRATION = "pref_vibration"
 
     private val audioScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private var fallbackToneGenerator: ToneGenerator? = null
+    private val toneLock = Any()
+    @Volatile
+    private var _fallbackToneGenerator: ToneGenerator? = null
 
-    init {
-        try {
-            fallbackToneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 85)
-        } catch (e: Exception) {
-            Log.w(TAG, "ToneGenerator init note: ${e.message}")
+    private val fallbackToneGenerator: ToneGenerator?
+        get() = _fallbackToneGenerator ?: synchronized(toneLock) {
+            _fallbackToneGenerator ?: try {
+                ToneGenerator(AudioManager.STREAM_MUSIC, 85).also { _fallbackToneGenerator = it }
+            } catch (e: Exception) {
+                Log.w(TAG, "ToneGenerator lazy init note: ${e.message}")
+                null
+            }
+        }
+
+    /**
+     * Releases native audio resources under memory pressure or backgrounding.
+     * Resources are lazily recreated automatically on the next sound effect.
+     */
+    fun releaseResources() {
+        synchronized(toneLock) {
+            try {
+                _fallbackToneGenerator?.release()
+            } catch (ignored: Exception) {}
+            _fallbackToneGenerator = null
         }
     }
 
@@ -332,18 +351,40 @@ object SoundEffectsManager {
             throw IllegalStateException("AudioTrack failed to initialize")
         }
 
-        track.write(buffer, 0, buffer.size)
-        track.play()
-        track.setNotificationMarkerPosition(buffer.size)
-        track.setPlaybackPositionUpdateListener(object : AudioTrack.OnPlaybackPositionUpdateListener {
-            override fun onMarkerReached(t: AudioTrack?) {
+        val released = AtomicBoolean(false)
+        val safeRelease = {
+            if (released.compareAndSet(false, true)) {
                 try {
-                    t?.release()
+                    track.stop()
+                } catch (ignored: Exception) {}
+                try {
+                    track.release()
                 } catch (ignored: Exception) {}
             }
+        }
 
-            override fun onPeriodicNotification(t: AudioTrack?) {}
-        })
+        try {
+            track.write(buffer, 0, buffer.size)
+            track.setNotificationMarkerPosition(buffer.size)
+            track.setPlaybackPositionUpdateListener(object : AudioTrack.OnPlaybackPositionUpdateListener {
+                override fun onMarkerReached(t: AudioTrack?) {
+                    safeRelease()
+                }
+
+                override fun onPeriodicNotification(t: AudioTrack?) {}
+            })
+            track.play()
+
+            // Safety cleanup if Android audio mixer drops the marker callback
+            val durationMs = ((buffer.size * 1000L) / sampleRate.coerceAtLeast(1)) + 400L
+            audioScope.launch {
+                delay(durationMs)
+                safeRelease()
+            }
+        } catch (e: Exception) {
+            safeRelease()
+            throw e
+        }
     }
 
     private fun vibrate(context: Context, durationMs: Long) {

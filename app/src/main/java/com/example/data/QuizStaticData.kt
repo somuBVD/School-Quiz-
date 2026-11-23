@@ -227,8 +227,10 @@ object QuizStaticData {
         return null
     }
 
-    // Static question bank covering Standard 6 primarily, falling back seamlessly.
-    val staticQuestions: List<QuestionModel> = listOf(
+    // Core inline fallback questions loaded lazily via QuestionBankCache (never eagerly allocated at startup).
+    val coreStaticQuestions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("CoreStatic") {
+            listOf(
         // === STD 6 - MATH - UNIT 1 (Numbers) ===
         QuestionModel(
             id = "s_6_math_1_1",
@@ -1291,7 +1293,62 @@ object QuizStaticData {
             correctAnswer = "Lactobacillus",
             explanation = "Lactobacillus promotes curd formation by fermenting lactose into lactic acid."
         )
-    ) + Std6KannadaQuestionBank.questions + Std6HindiQuestionBank.questions + Std6MathsQuestionBank.questions + Std6ScienceQuestionBank.questions + Std6SocialQuestionBank.questions + Std7KannadaQuestionBank.questions + Std7EnglishQuestionBank.questions + Std7HindiQuestionBank.questions + Std7MathsQuestionBank.questions + Std7MathsExtraUnitsBank.questions + Std7MathsPart2UnitsBank.questions + Std7SciencePart1QuestionBank.questions + Std7SciencePart2QuestionBank.questions + Std7SocialPart1QuestionBank.questions + Std7SocialPart2QuestionBank.questions + Std8KannadaQuestionBank.questions + Std8EnglishQuestionBank.questions + Std8HindiQuestionBank.questions + Std8MathsQuestionBank.questions + Std8ScienceQuestionBank.questions + Std8SocialQuestionBank.questions + MorarjiKannadaQuestionBank.questions + MorarjiEnglishQuestionBank.questions + MorarjiMathsQuestionBank.questions + MorarjiGKQuestionBank.questions + MorarjiMentalAbilityQuestionBank.questions + MentalAbilityQuestionBank.questions + NmmsSatMathsQuestionBank.questions + NmmsSatScienceQuestionBank.questions + NmmsSatSocialQuestionBank.questions + Std9KannadaProseQuestionBank.questions + Std9KannadaPoemQuestionBank.questions + Std9KannadaSupplementaryQuestionBank.questions + Std9EnglishQuestionBank.questions + Std9HindiQuestionBank.questions + Std9ScienceQuestionBank.questions + Std9SocialQuestionBank.questions + Std9MathsQuestionBank.questions + Std10KannadaQuestionBank.questions + Std10EnglishQuestionBank.questions + Std10HindiQuestionBank.questions + Std10ScienceQuestionBank.questions + Std10SocialQuestionBank.questions + Std10MathsQuestionBank.questions + FlnCompetencyQuestionBank.questions
+        )
+        }
+
+    /**
+     * On-demand full question pool across all banks (used only by tests or explicit full-bank tools).
+     * Never allocated on app startup and never pinned as a permanent field on QuizStaticData.
+     */
+    val staticQuestions: List<QuestionModel>
+        get() = buildList {
+            addAll(coreStaticQuestions)
+            addAll(Std6KannadaQuestionBank.questions)
+            addAll(Std6HindiQuestionBank.questions)
+            addAll(Std6MathsQuestionBank.questions)
+            addAll(Std6ScienceQuestionBank.questions)
+            addAll(Std6SocialQuestionBank.questions)
+            addAll(Std7KannadaQuestionBank.questions)
+            addAll(Std7EnglishQuestionBank.questions)
+            addAll(Std7HindiQuestionBank.questions)
+            addAll(Std7MathsQuestionBank.questions)
+            addAll(Std7MathsExtraUnitsBank.questions)
+            addAll(Std7MathsPart2UnitsBank.questions)
+            addAll(Std7SciencePart1QuestionBank.questions)
+            addAll(Std7SciencePart2QuestionBank.questions)
+            addAll(Std7SocialPart1QuestionBank.questions)
+            addAll(Std7SocialPart2QuestionBank.questions)
+            addAll(Std8KannadaQuestionBank.questions)
+            addAll(Std8EnglishQuestionBank.questions)
+            addAll(Std8HindiQuestionBank.questions)
+            addAll(Std8MathsQuestionBank.questions)
+            addAll(Std8ScienceQuestionBank.questions)
+            addAll(Std8SocialQuestionBank.questions)
+            addAll(MorarjiKannadaQuestionBank.questions)
+            addAll(MorarjiEnglishQuestionBank.questions)
+            addAll(MorarjiMathsQuestionBank.questions)
+            addAll(MorarjiGKQuestionBank.questions)
+            addAll(MorarjiMentalAbilityQuestionBank.questions)
+            addAll(MentalAbilityQuestionBank.questions)
+            addAll(NmmsSatMathsQuestionBank.questions)
+            addAll(NmmsSatScienceQuestionBank.questions)
+            addAll(NmmsSatSocialQuestionBank.questions)
+            addAll(Std9KannadaProseQuestionBank.questions)
+            addAll(Std9KannadaPoemQuestionBank.questions)
+            addAll(Std9KannadaSupplementaryQuestionBank.questions)
+            addAll(Std9EnglishQuestionBank.questions)
+            addAll(Std9HindiQuestionBank.questions)
+            addAll(Std9ScienceQuestionBank.questions)
+            addAll(Std9SocialQuestionBank.questions)
+            addAll(Std9MathsQuestionBank.questions)
+            addAll(Std10KannadaQuestionBank.questions)
+            addAll(Std10EnglishQuestionBank.questions)
+            addAll(Std10HindiQuestionBank.questions)
+            addAll(Std10ScienceQuestionBank.questions)
+            addAll(Std10SocialQuestionBank.questions)
+            addAll(Std10MathsQuestionBank.questions)
+            addAll(FlnCompetencyQuestionBank.questions)
+        }
 
     /**
      * Checks if a question's subject matches or aliases the requested subject.
@@ -1311,26 +1368,140 @@ object QuizStaticData {
         return false
     }
 
-    // Fallback getter if specific parameters don't find questions
+    /**
+     * Loads ONLY the question bank(s) matching the requested standard and subject,
+     * avoiding initialization of unrelated standards/subjects to keep memory footprint low.
+     */
+    fun getQuestionsForSubject(stdId: Int, subjectId: String): List<QuestionModel> {
+        val subj = subjectId.lowercase()
+        val result = ArrayList<QuestionModel>()
+
+        // Always include lightweight core inline matches for this standard/subject
+        for (q in coreStaticQuestions) {
+            if (q.stdId == stdId && matchesSubject(q.subjectId, subj)) {
+                result.add(q)
+            }
+        }
+
+        if (subj == "fln" || subj == "computer") {
+            result.addAll(FlnCompetencyQuestionBank.questions)
+            return result
+        }
+
+        when (stdId) {
+            6 -> when (subj) {
+                "kannada" -> result.addAll(Std6KannadaQuestionBank.questions)
+                "hindi" -> result.addAll(Std6HindiQuestionBank.questions)
+                "math", "sat_math" -> result.addAll(Std6MathsQuestionBank.questions)
+                "science", "sat_science" -> result.addAll(Std6ScienceQuestionBank.questions)
+                "social", "sat_social" -> result.addAll(Std6SocialQuestionBank.questions)
+            }
+            7 -> when (subj) {
+                "kannada" -> result.addAll(Std7KannadaQuestionBank.questions)
+                "english" -> result.addAll(Std7EnglishQuestionBank.questions)
+                "hindi" -> result.addAll(Std7HindiQuestionBank.questions)
+                "math", "sat_math" -> {
+                    result.addAll(Std7MathsQuestionBank.questions)
+                    result.addAll(Std7MathsExtraUnitsBank.questions)
+                    result.addAll(Std7MathsPart2UnitsBank.questions)
+                }
+                "science", "sat_science" -> {
+                    result.addAll(Std7SciencePart1QuestionBank.questions)
+                    result.addAll(Std7SciencePart2QuestionBank.questions)
+                }
+                "social", "sat_social" -> {
+                    result.addAll(Std7SocialPart1QuestionBank.questions)
+                    result.addAll(Std7SocialPart2QuestionBank.questions)
+                }
+            }
+            8 -> when (subj) {
+                "kannada" -> result.addAll(Std8KannadaQuestionBank.questions)
+                "english" -> result.addAll(Std8EnglishQuestionBank.questions)
+                "hindi" -> result.addAll(Std8HindiQuestionBank.questions)
+                "math", "sat_math" -> result.addAll(Std8MathsQuestionBank.questions)
+                "science", "sat_science" -> result.addAll(Std8ScienceQuestionBank.questions)
+                "social", "sat_social" -> result.addAll(Std8SocialQuestionBank.questions)
+            }
+            9 -> when (subj) {
+                "kannada" -> {
+                    result.addAll(Std9KannadaProseQuestionBank.questions)
+                    result.addAll(Std9KannadaPoemQuestionBank.questions)
+                    result.addAll(Std9KannadaSupplementaryQuestionBank.questions)
+                }
+                "english" -> result.addAll(Std9EnglishQuestionBank.questions)
+                "hindi" -> result.addAll(Std9HindiQuestionBank.questions)
+                "math", "sat_math" -> result.addAll(Std9MathsQuestionBank.questions)
+                "science", "sat_science" -> result.addAll(Std9ScienceQuestionBank.questions)
+                "social", "sat_social" -> result.addAll(Std9SocialQuestionBank.questions)
+            }
+            10 -> when (subj) {
+                "kannada" -> result.addAll(Std10KannadaQuestionBank.questions)
+                "english" -> result.addAll(Std10EnglishQuestionBank.questions)
+                "hindi" -> result.addAll(Std10HindiQuestionBank.questions)
+                "math", "sat_math" -> result.addAll(Std10MathsQuestionBank.questions)
+                "science", "sat_science" -> result.addAll(Std10ScienceQuestionBank.questions)
+                "social", "sat_social" -> result.addAll(Std10SocialQuestionBank.questions)
+            }
+            11 -> when (subj) {
+                "kannada" -> result.addAll(MorarjiKannadaQuestionBank.questions)
+                "english" -> result.addAll(MorarjiEnglishQuestionBank.questions)
+                "math", "sat_math" -> result.addAll(MorarjiMathsQuestionBank.questions)
+                "gk" -> result.addAll(MorarjiGKQuestionBank.questions)
+                "mental_ability", "gmat" -> result.addAll(MorarjiMentalAbilityQuestionBank.questions)
+            }
+            12 -> when (subj) {
+                "gmat", "mental_ability" -> result.addAll(MentalAbilityQuestionBank.questions)
+                "sat_math", "math" -> result.addAll(NmmsSatMathsQuestionBank.questions)
+                "sat_science", "science" -> result.addAll(NmmsSatScienceQuestionBank.questions)
+                "sat_social", "social" -> result.addAll(NmmsSatSocialQuestionBank.questions)
+            }
+        }
+        return result
+    }
+
+    /**
+     * Loads questions for a single standard only (used for targeted resets / standard-wide fallbacks).
+     */
+    fun getQuestionsForStandard(stdId: Int): List<QuestionModel> {
+        val subjects = standardsList.find { it.std == stdId }?.subjects ?: return coreStaticQuestions
+        return buildList {
+            for (subj in subjects) {
+                addAll(getQuestionsForSubject(stdId, subj.id))
+            }
+        }
+    }
+
+    // Memory-optimized getter: loads ONLY the requested standard/subject bank before falling back.
     fun getQuestionsForUnit(stdId: Int, subjectId: String, unitId: Int, custom: List<CustomQuestion>): List<QuestionModel> {
-        val exactMatches = staticQuestions.filter {
+        val subjectPool = getQuestionsForSubject(stdId, subjectId)
+
+        val exactMatches = subjectPool.filter {
             it.stdId == stdId && matchesSubject(it.subjectId, subjectId) && it.unitId == unitId
         }
 
         val filteredStatic = if (exactMatches.isNotEmpty()) {
             exactMatches
         } else {
-            val sameSubjectAndUnit = staticQuestions.filter {
+            val sameSubjectAndUnitInPool = subjectPool.filter {
                 matchesSubject(it.subjectId, subjectId) && it.unitId == unitId
             }
-            if (sameSubjectAndUnit.isNotEmpty()) {
-                sameSubjectAndUnit
+            if (sameSubjectAndUnitInPool.isNotEmpty()) {
+                sameSubjectAndUnitInPool
             } else {
-                val sameSubject = staticQuestions.filter {
-                    matchesSubject(it.subjectId, subjectId)
+                val coreSubjectAndUnit = coreStaticQuestions.filter {
+                    matchesSubject(it.subjectId, subjectId) && it.unitId == unitId
                 }
-                if (sameSubject.isNotEmpty()) sameSubject
-                else staticQuestions.filter { it.stdId == stdId }
+                if (coreSubjectAndUnit.isNotEmpty()) {
+                    coreSubjectAndUnit
+                } else if (subjectPool.isNotEmpty()) {
+                    subjectPool
+                } else {
+                    val coreSubject = coreStaticQuestions.filter {
+                        matchesSubject(it.subjectId, subjectId)
+                    }
+                    if (coreSubject.isNotEmpty()) coreSubject
+                    else coreStaticQuestions.filter { it.stdId == stdId }
+                }
             }
         }
 

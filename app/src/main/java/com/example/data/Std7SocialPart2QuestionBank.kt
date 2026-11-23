@@ -30,7 +30,9 @@ object Std7SocialPart2QuestionBank {
         UnitTemplate(12, "ಭೂಗೋಳ: ಘಟಕ 12 - ಆಸ್ಟ್ರೇಲಿಯಾ ಮತ್ತು ಅಂಟಾರ್ಕ್ಟಿಕಾ", 8, "Easy")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std7SocialPart2") {
+            listOf(
         // ==========================================
         // ಘಟಕ 7: ಬ್ರಿಟಿಷ್ ಆಳ್ವಿಕೆಯ ವಿಸ್ತರಣೆ ಮತ್ತು ಪರಿಣಾಮಗಳು
         // ==========================================
@@ -440,4 +442,5 @@ object Std7SocialPart2QuestionBank {
             explanation = "1983-84 ರಲ್ಲಿ ಭಾರತವು ಅಂಟಾರ್ಕ್ಟಿಕಾದಲ್ಲಿ ದಕ್ಷಿಣ ಗಂಗೋತ್ರಿ ಸಂಶೋಧನಾ ಕೇಂದ್ರವನ್ನು ಸ್ಥಾಪಿಸಿತು."
         )
     )
+        }
 }

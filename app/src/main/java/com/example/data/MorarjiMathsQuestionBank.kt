@@ -16,7 +16,9 @@ object MorarjiMathsQuestionBank {
         UnitTemplate(7, "ಘಟಕ 7: ಪರಿಧಿ, ವಿಸ್ತೀರ್ಣ ಮತ್ತು ನಿತ್ಯಜೀವನದ ಲೆಕ್ಕಗಳು", 6, "Hard")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("MorarjiMaths") {
+            listOf(
         // ========================================================
         // ಘಟಕ 1: ಸಂಖ್ಯಾ ಪದ್ಧತಿ ಮತ್ತು ಸ್ಥಾನಬೆಲೆ (Number System & Place Value)
         // ========================================================
@@ -507,4 +509,5 @@ object MorarjiMathsQuestionBank {
             explanation = "ಸರಾಸರಿ = (12 + 18 + 24) ÷ 3 = 54 ÷ 3 = 18."
         )
     )
+        }
 }

@@ -13,7 +13,9 @@ object MorarjiMentalAbilityQuestionBank {
         UnitTemplate(4, "ಘಟಕ 4: ಭಿನ್ನವಾದದ್ದನ್ನು ಕಂಡುಹಿಡಿಯುವುದು — ವರ್ಗೀಕರಣ (Classification / Odd One Out)", 8, "Easy")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("MorarjiMentalAbility") {
+            listOf(
         QuestionModel(
             id = "morarji_ma_u1_q1",
             stdId = 11,
@@ -378,4 +380,5 @@ object MorarjiMentalAbilityQuestionBank {
             explanation = "ಉಳಿದವು ಪ್ರಾಣಿ ಮತ್ತು ಅವುಗಳ ಮರಿಗಳ ಸಂಬಂಧ; ಕೋಳಿ ಹಾಲು ಕೊಡುವುದಿಲ್ಲ, ಮೊಟ್ಟೆ ಇಡುತ್ತದೆ."
         )
     )
+        }
 }

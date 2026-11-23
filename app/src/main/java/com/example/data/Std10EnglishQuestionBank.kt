@@ -55,7 +55,9 @@ object Std10EnglishQuestionBank {
         UnitTemplate(21, "Grammar, Vocabulary & Language Study", 11, "Hard")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std10English") {
+            listOf(
         // ========================================================
         // 🟦 UNIT 1 – PROSE 1: A HERO
         // ========================================================
@@ -2463,4 +2465,5 @@ object Std10EnglishQuestionBank {
             explanation = "'Prompt payment' is a standard business and language collocation."
         )
     )
+        }
 }

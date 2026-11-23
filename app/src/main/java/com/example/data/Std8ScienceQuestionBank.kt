@@ -18,7 +18,9 @@ object Std8ScienceQuestionBank {
         UnitTemplate(13, "ಅಧ್ಯಾಯ 13: ನಮ್ಮ ಮನೆಭೂಮಿ : ಜೀವಸಂಕುಲಗಳನ್ನು ಪೋಷಿಸುವ ಒಂದು ಅನನ್ಯ ಗ್ರಹ", 24, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std8Science") {
+            listOf(
         // 🟦 ಅಧ್ಯಾಯ 1: ವಿಜ್ಞಾನದ ಸಂಶೋಧಕ ಜಗತ್ತನ್ನು ಅನ್ವೇಷಿಸುವುದು
         // ========================================================
         QuestionModel(
@@ -6795,4 +6797,5 @@ object Std8ScienceQuestionBank {
             explanation = "ಮಂಗಳ ಗ್ರಹವು ಭೂಮಿಯಂತೆ ಶಿಲಾ ಗ್ರಹವಾಗಿದ್ದು, ಜೀವದ ಸಾಧ್ಯತೆಯ ಅಧ್ಯಯನದಲ್ಲಿ ಅತ್ಯಂತ ಪ್ರಮುಖವಾಗಿದೆ."
         ),
     )
+        }
 }

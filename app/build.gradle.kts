@@ -14,8 +14,8 @@ android {
     applicationId = "com.aistudio.schoolquiz.qyvxrt"
     minSdk = 24
     targetSdk = 36
-    versionCode = 32
-    versionName = "32.0"
+    versionCode = 34
+    versionName = "34.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -37,9 +37,9 @@ android {
       val customKeystore = file(customKeystorePath)
       if (customKeystore.exists()) {
         storeFile = customKeystore
-        storePassword = System.getenv("STORE_PASSWORD")
+        storePassword = System.getenv("STORE_PASSWORD") ?: "schoolquiz123"
         keyAlias = "upload"
-        keyPassword = System.getenv("KEY_PASSWORD")
+        keyPassword = System.getenv("KEY_PASSWORD") ?: "schoolquiz123"
       } else {
         storeFile = file("${rootDir}/debug.keystore")
         storePassword = "android"
@@ -57,8 +57,15 @@ android {
 
   buildTypes {
     release {
-      isMinifyEnabled = false
-      isShrinkResources = false
+      isMinifyEnabled = true
+      isShrinkResources = true
+      ndk {
+        debugSymbolLevel = "FULL"
+      }
+      proguardFiles(
+        getDefaultProguardFile("proguard-android-optimize.txt"),
+        "proguard-rules.pro"
+      )
       signingConfig = signingConfigs.getByName("release")
     }
     debug {
@@ -107,6 +114,10 @@ dependencies {
   implementation(libs.firebase.auth)
   implementation(libs.firebase.firestore)
   implementation(libs.firebase.storage)
+  implementation(libs.androidx.credentials)
+  implementation(libs.androidx.credentials.play.services)
+  implementation(libs.googleid)
+  implementation(libs.billing.ktx)
   // implementation(libs.accompanist.permissions)
   implementation(libs.androidx.activity.compose)
   // implementation(libs.androidx.camera.camera2)
@@ -120,24 +131,25 @@ dependencies {
   implementation(libs.androidx.compose.ui.graphics)
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.core.ktx)
+  implementation(libs.androidx.fragment)
   // implementation(libs.androidx.datastore.preferences)
   implementation(libs.androidx.lifecycle.runtime.compose)
   implementation(libs.androidx.lifecycle.runtime.ktx)
   implementation(libs.androidx.lifecycle.viewmodel.compose)
-  implementation(libs.androidx.navigation.compose)
+  // implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.work.runtime.ktx)
   implementation(libs.androidx.room.ktx)
   implementation(libs.androidx.room.runtime)
   implementation(libs.coil.compose)
-  implementation(libs.converter.moshi)
+  // implementation(libs.converter.moshi)
   // implementation(libs.firebase.ai)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)
-  implementation(libs.logging.interceptor)
-  implementation(libs.moshi.kotlin)
-  implementation(libs.okhttp)
+  // implementation(libs.logging.interceptor)
+  // implementation(libs.moshi.kotlin)
+  // implementation(libs.okhttp)
   // implementation(libs.play.services.location)
-  implementation(libs.retrofit)
+  // implementation(libs.retrofit)
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.junit)
@@ -155,5 +167,5 @@ dependencies {
   debugImplementation(libs.androidx.compose.ui.test.manifest)
   debugImplementation(libs.androidx.compose.ui.tooling)
   "ksp"(libs.androidx.room.compiler)
-  "ksp"(libs.moshi.kotlin.codegen)
+  // "ksp"(libs.moshi.kotlin.codegen)
 }

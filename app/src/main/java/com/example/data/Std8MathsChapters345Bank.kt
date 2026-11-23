@@ -21,7 +21,8 @@ package com.example.data
  */
 object Std8MathsChapters345Bank {
 
-    val chapter3Questions: List<QuestionModel> = listOf(
+    val chapter3Questions: List<QuestionModel>
+        get() = listOf(
         // === ಅಧ್ಯಾಯ–3: ಸಂಖ್ಯೆಗಳ ಕಥೆ (ಮೂಲ MCQs & 1-ಅಂಕದ ಪರಿವರ್ತಿತ MCQs) ===
         QuestionModel(
             id = "s_8_mat_c3_1",
@@ -245,7 +246,8 @@ object Std8MathsChapters345Bank {
         )
     )
 
-    val chapter4Questions: List<QuestionModel> = listOf(
+    val chapter4Questions: List<QuestionModel>
+        get() = listOf(
         // === ಅಧ್ಯಾಯ–4: ಚತುರ್ಭುಜಗಳು (Consolidated MCQs) ===
         QuestionModel(
             id = "s_8_mat_c4_1",
@@ -524,7 +526,8 @@ object Std8MathsChapters345Bank {
         )
     )
 
-    val chapter5Questions: List<QuestionModel> = listOf(
+    val chapter5Questions: List<QuestionModel>
+        get() = listOf(
         // === ಅಧ್ಯಾಯ–5: ಸಂಖ್ಯೆಗಳ ಆಟ (Consolidated MCQs) ===
         QuestionModel(
             id = "s_8_mat_c5_1",

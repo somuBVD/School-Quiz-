@@ -37,7 +37,9 @@ object Std9MathsQuestionBank {
         UnitTemplate(12, "ಅಧ್ಯಾಯ 12: ಸಂಖ್ಯಾಶಾಸ್ತ್ರ", 16, "Easy")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std9Maths") {
+            listOf(
         QuestionModel(
             id = "std9_math_u1_q1",
             stdId = 9,
@@ -2343,4 +2345,5 @@ object Std9MathsQuestionBank {
             mediaRes = ""
         )
     )
+        }
 }

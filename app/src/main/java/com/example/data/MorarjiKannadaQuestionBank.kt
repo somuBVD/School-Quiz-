@@ -16,7 +16,9 @@ object MorarjiKannadaQuestionBank {
         UnitTemplate(7, "ಘಟಕ 7: ಗಾದೆಗಳು, ವಿರುದ್ಧಾರ್ಥಕ, ಶುಭನುಡಿ ಮತ್ತು ಭಾಷಾಭ್ಯಾಸ", 39, "Easy")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("MorarjiKannada") {
+            listOf(
         // ========================================================
         // ಘಟಕ 1: ಕನ್ನಡ ಪಠ್ಯ, ಗದ್ಯ-ಪದ್ಯ ಮತ್ತು ಕಥಾ ಸಾಹಿತ್ಯ
         // ========================================================
@@ -3460,4 +3462,5 @@ object MorarjiKannadaQuestionBank {
             explanation = "ಭಾಷಾಭ್ಯಾಸದ ಪ್ರಕಾರ ಸರಿಯಾದ ಉತ್ತರ: ಕಾರ್ಖಾನೆ."
         )
     )
+        }
 }

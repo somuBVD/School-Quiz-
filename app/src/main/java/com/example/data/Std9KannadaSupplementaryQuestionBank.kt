@@ -18,7 +18,9 @@ object Std9KannadaSupplementaryQuestionBank {
         UnitTemplate(23, "ಘಟಕ 23: ಅಪಠಿತ ಗದ್ಯಗಳು (ಪರಿಸರ ಸಂರಕ್ಷಣೆ, ಬಸಯ್ಯ, ಕರ್ನಾಟಕ ನೂತನ ವಿದ್ಯಾಲಯ)", 8, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std9KannadaSupplementary") {
+            listOf(
         // ==========================================
         // ಘಟಕ 17: ಪೂರಕ ಪಾಠ 1 - ಪುಟ್ಟ ಹಕ್ಕಿ (ಜಂಬಣ್ಣ ಅಮರಚಿಂತ)
         // ==========================================
@@ -850,4 +852,5 @@ object Std9KannadaSupplementaryQuestionBank {
             explanation = "ಸ್ವದೇಶಿ ಶಿಕ್ಷಣ ನೀಡಲು ಧಾರವಾಡದಲ್ಲಿ 'ಕರ್ನಾಟಕ ನೂತನ ವಿದ್ಯಾಲಯ' ಎಂಬ ರಾಷ್ಟ್ರೀಯ ವಿದ್ಯಾಲಯ ಸ್ಥಾಪಿಸಿದರು."
         )
     )
+        }
 }

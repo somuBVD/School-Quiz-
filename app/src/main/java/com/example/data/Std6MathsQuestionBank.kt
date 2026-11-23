@@ -19,7 +19,9 @@ object Std6MathsQuestionBank {
         UnitTemplate(10, "ಘಟಕ 10: ಸೊನ್ನೆಯ ಮತ್ತೊಂದು ಬದಿ", 10, "Easy")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std6Maths") {
+            listOf(
         // ==================== ಘಟಕ 1: ಗಣಿತದಲ್ಲಿ ವಿನ್ಯಾಸಗಳು ====================
         QuestionModel(
             id = "s_6_mat_u1_1",
@@ -847,4 +849,5 @@ object Std6MathsQuestionBank {
             explanation = "+3 ರಿಂದ 5 ಮಹಡಿ ಕೆಳಗೆ: 3 − 5 = −2 (ನೆಲಮಾಳಿಗೆಯ 2ನೇ ಹಂತ)."
         )
     )
+        }
 }

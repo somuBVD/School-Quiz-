@@ -26,7 +26,9 @@ object Std6HindiQuestionBank {
         UnitTemplate(25, "पाठ 25: वनमहोत्सव", 5, "Easy")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std6Hindi") {
+            listOf(
         // === पाठ 1: संरचक रेखाएँ ===
         QuestionModel(
             id = "s_6_hin_u1_1",
@@ -1205,4 +1207,5 @@ object Std6HindiQuestionBank {
             explanation = "पेड़ कार्बन डाइऑक्साइड सोखकर हमें जीवनदायी शुद्ध ऑक्सीजन (हवा) देते हैं।"
         )
     )
+        }
 }

@@ -78,7 +78,9 @@ object Std9SocialQuestionBank {
         UnitTemplate(33, "ಅಧ್ಯಾಯ 33: ಮಾರುಕಟ್ಟೆ ನಿರ್ವಹಣೆ", 11, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std9Social") {
+            listOf(
         QuestionModel(
             id = "std9_soc_u1_q1",
             stdId = 9,
@@ -4436,4 +4438,5 @@ object Std9SocialQuestionBank {
             mediaRes = ""
         )
     )
+        }
 }

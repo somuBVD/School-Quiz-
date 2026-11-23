@@ -3,11 +3,16 @@ package com.example.battle
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import com.example.auth.NamedFirestoreProvider
+import com.example.auth.OperationType
+import com.example.auth.handleFirestoreError
 import com.example.data.QuestionModel
 import com.example.data.UserProfile
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 
 data class OnlinePlayer(
@@ -26,6 +31,8 @@ data class OnlineRoomData(
     val roomId: String = "",
     val roomCode: String = "",
     val hostUid: String = "",
+    val player2Uid: String? = null,
+    val participantUids: List<String> = emptyList(),
     val isPrivate: Boolean = false,
     val subject: String = "mixed",
     val standard: Int = 6,
@@ -39,34 +46,29 @@ data class OnlineRoomData(
 )
 
 /**
- * RealOnlineBattleManager provides genuine online 1 vs 1 student multiplayer battles
- * utilizing Google Cloud Firestore collection 'battle_rooms'.
+ * RealOnlineBattleManager powers live 1 vs 1 student multiplayer duels using
+ * the provisioned named Cloud Firestore database (`battle_rooms` collection) and
+ * authenticated Firebase Auth user UIDs (via Google Sign-In).
  *
- * Supports:
- * 1. Quick Match: Auto-matches students in the same standard or creates an open room.
- * 2. Room Code Duels: Host creates a 6-digit room code, opponent enters the code to join instantly.
- * 3. Real-Time Gameplay: Snapshot listener synchronizes live rounds, timed answers, speed points, and victory stats.
+ * Key guarantees:
+ * 1. Always connects to the provisioned named Firestore database (`firestore_database_id`).
+ * 2. Uses authenticated `FirebaseAuth.currentUser.uid` so students on different devices have unique IDs.
+ * 3. Uses atomic Firestore transactions when joining waiting rooms to prevent race conditions.
+ * 4. Logs all Firestore errors with structured JSON via `handleFirestoreError`.
  */
 class RealOnlineBattleManager private constructor(private val context: Context) {
 
-    private val firestore: FirebaseFirestore? by lazy {
-        try {
-            FirebaseFirestore.getInstance()
-        } catch (t: Throwable) {
-            Log.w(TAG, "Firestore initialization note: ${t.message}")
-            null
-        }
-    }
+    private val firestore: FirebaseFirestore?
+        get() = NamedFirestoreProvider.getDatabase(context)
 
     private var activeRoomListener: ListenerRegistration? = null
 
     fun isOnlineAvailable(): Boolean = firestore != null
 
-    /**
-     * Converts QuestionModel list to Firestore-compatible maps.
-     */
+    fun isAuthenticatedForOnlineBattle(): Boolean = NamedFirestoreProvider.currentUid(context) != null
+
     private fun questionsToMaps(questions: List<QuestionModel>): List<Map<String, Any>> {
-        return questions.map { q ->
+        return questions.take(10).map { q ->
             mapOf(
                 "id" to q.id,
                 "stdId" to q.stdId,
@@ -82,9 +84,6 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
         }
     }
 
-    /**
-     * Reconstructs QuestionModel list from Firestore data.
-     */
     @Suppress("UNCHECKED_CAST")
     private fun mapsToQuestions(rawList: List<Any>?): List<QuestionModel> {
         if (rawList == null) return emptyList()
@@ -103,21 +102,19 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
                     explanation = map["explanation"]?.toString() ?: "",
                     mediaRes = map["mediaRes"]?.toString() ?: ""
                 )
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 null
             }
         }
     }
 
-    /**
-     * Parses a Firestore document snapshot into OnlineRoomData.
-     */
     @Suppress("UNCHECKED_CAST")
     fun parseRoomDoc(docData: Map<String, Any>?): OnlineRoomData? {
         if (docData == null) return null
         return try {
             val p1Map = docData["player1"] as? Map<String, Any> ?: emptyMap()
             val p2Map = docData["player2"] as? Map<String, Any>
+            val participants = (docData["participantUids"] as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
 
             val player1 = OnlinePlayer(
                 uid = p1Map["uid"]?.toString() ?: "",
@@ -149,6 +146,8 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
                 roomId = docData["roomId"]?.toString() ?: "",
                 roomCode = docData["roomCode"]?.toString() ?: "",
                 hostUid = docData["hostUid"]?.toString() ?: "",
+                player2Uid = docData["player2Uid"]?.toString(),
+                participantUids = participants,
                 isPrivate = docData["isPrivate"] as? Boolean ?: false,
                 subject = docData["subject"]?.toString() ?: "mixed",
                 standard = (docData["standard"] as? Number)?.toInt() ?: 6,
@@ -166,22 +165,78 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
         }
     }
 
+    private fun buildPlayerMap(uid: String, user: UserProfile): Map<String, Any> {
+        return mapOf(
+            "uid" to uid,
+            "name" to user.name.ifBlank { "Student" }.take(60),
+            "school" to "Karnataka State Board",
+            "avatar" to user.avatar.take(200),
+            "standard" to user.standard,
+            "score" to 0,
+            "currentAnswer" to "",
+            "streak" to 0,
+            "answeredAt" to 0L
+        )
+    }
+
     /**
-     * Search for an existing open waiting room in Firestore, or create a new room as host.
-     * Returns Triple(roomId, roomCode, isHost).
+     * Atomically joins a WAITING battle room as Player 2 inside a Firestore transaction.
+     */
+    private suspend fun joinRoomTransaction(
+        db: FirebaseFirestore,
+        roomId: String,
+        currentUid: String,
+        user: UserProfile
+    ): Boolean {
+        val docRef = db.collection(COLLECTION_BATTLE_ROOMS).document(roomId)
+        val p2Map = buildPlayerMap(currentUid, user)
+        return db.runTransaction { transaction ->
+            val snapshot = transaction.get(docRef)
+            if (!snapshot.exists()) return@runTransaction false
+            val status = snapshot.getString("status") ?: ""
+            val hostUid = snapshot.getString("hostUid") ?: ""
+            val existingP2 = snapshot.getString("player2Uid")
+            if (status != "WAITING" || hostUid.isBlank() || hostUid == currentUid || !existingP2.isNullOrBlank()) {
+                return@runTransaction false
+            }
+
+            transaction.update(
+                docRef,
+                mapOf(
+                    "player2" to p2Map,
+                    "player2Uid" to currentUid,
+                    "participantUids" to listOf(hostUid, currentUid),
+                    "status" to "IN_PROGRESS",
+                    "roundStartTime" to System.currentTimeMillis(),
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            )
+            true
+        }.await()
+    }
+
+    /**
+     * Search for an existing open waiting room in Firestore, or create a new room as Host.
+     * Returns Result<Triple(roomId, roomCode, isHost)>.
      */
     suspend fun findOrCreateMatch(
         user: UserProfile,
         subjectId: String,
         candidateQuestions: List<QuestionModel>
-    ): Triple<String, String, Boolean> {
-        val db = firestore ?: throw IllegalStateException("Cloud Firestore is offline")
-        val currentUid = user.id.toString()
+    ): Result<Triple<String, String, Boolean>> {
+        val db = firestore
+            ?: return Result.failure(IllegalStateException("Cloud Firestore is offline."))
+        val currentUid = try {
+            NamedFirestoreProvider.requireAuthenticatedUid(context)
+        } catch (e: Exception) {
+            return Result.failure(e)
+        }
+
         val now = System.currentTimeMillis()
 
-        // 1. Check for open waiting rooms in same standard
+        // 1. Query open waiting rooms for same standard (matches firestore.rules list constraint)
         try {
-            val snapshot = db.collection("battle_rooms")
+            val snapshot = db.collection(COLLECTION_BATTLE_ROOMS)
                 .whereEqualTo("status", "WAITING")
                 .whereEqualTo("isPrivate", false)
                 .whereEqualTo("standard", user.standard)
@@ -191,76 +246,69 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
 
             for (doc in snapshot.documents) {
                 val hostUid = doc.getString("hostUid") ?: ""
-                val createdAt = doc.getLong("createdAt") ?: 0L
-                // Avoid matching with self and ignore expired rooms older than 3 minutes
-                if (hostUid != currentUid && (now - createdAt) < 180_000L) {
+                val createdAtMs = when (val rawCreated = doc.get("createdAt")) {
+                    is Timestamp -> rawCreated.toDate().time
+                    is Number -> rawCreated.toLong()
+                    else -> now
+                }
+                // Match with a different authenticated student & ignore stale rooms (> 5 min old)
+                if (hostUid.isNotBlank() && hostUid != currentUid && (now - createdAtMs) < 300_000L) {
                     val roomId = doc.id
                     val roomCode = doc.getString("roomCode") ?: ""
-
-                    // Join as Player 2
-                    val p2Map = mapOf(
-                        "uid" to currentUid,
-                        "name" to user.name.ifBlank { "Student" },
-                        "school" to "Karnataka State Board",
-                        "avatar" to user.avatar,
-                        "standard" to user.standard,
-                        "score" to 0,
-                        "currentAnswer" to "",
-                        "streak" to 0,
-                        "answeredAt" to 0L
-                    )
-
-                    db.collection("battle_rooms").document(roomId).update(
-                        mapOf(
-                            "player2" to p2Map,
-                            "status" to "IN_PROGRESS",
-                            "roundStartTime" to System.currentTimeMillis()
-                        )
-                    ).await()
-
-                    Log.i(TAG, "Successfully joined online battle room: $roomId as Player 2")
-                    return Triple(roomId, roomCode, false)
+                    val joined = try {
+                        joinRoomTransaction(db, roomId, currentUid, user)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (t: Throwable) {
+                        handleFirestoreError(t, OperationType.UPDATE, "$COLLECTION_BATTLE_ROOMS/$roomId")
+                        false
+                    }
+                    if (joined) {
+                        Log.i(TAG, "Joined online battle room $roomId as Player 2")
+                        return Result.success(Triple(roomId, roomCode, false))
+                    }
                 }
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "Open room query note: ${e.message}")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            handleFirestoreError(t, OperationType.LIST, COLLECTION_BATTLE_ROOMS)
+            return Result.failure(t)
         }
 
-        // 2. If no open room found, create a new room as Host
+        // 2. No open room available — create a new public room as Host
         val generatedCode = (100000..999999).random().toString()
         val roomId = "battle_${now}_${(1000..9999).random()}"
         val selectedQuestions = candidateQuestions.shuffled().take(5)
-
-        val p1Map = mapOf(
-            "uid" to currentUid,
-            "name" to user.name.ifBlank { "Student" },
-            "school" to "Karnataka State Board",
-            "avatar" to user.avatar,
-            "standard" to user.standard,
-            "score" to 0,
-            "currentAnswer" to "",
-            "streak" to 0,
-            "answeredAt" to 0L
-        )
+        val p1Map = buildPlayerMap(currentUid, user)
 
         val roomMap = hashMapOf<String, Any>(
             "roomId" to roomId,
             "roomCode" to generatedCode,
             "hostUid" to currentUid,
+            "participantUids" to listOf(currentUid),
             "isPrivate" to false,
-            "subject" to subjectId,
+            "subject" to subjectId.take(40),
             "standard" to user.standard,
             "status" to "WAITING",
             "currentRound" to 0,
             "roundStartTime" to 0L,
-            "createdAt" to now,
+            "createdAt" to FieldValue.serverTimestamp(),
+            "updatedAt" to FieldValue.serverTimestamp(),
             "questions" to questionsToMaps(selectedQuestions),
             "player1" to p1Map
         )
 
-        db.collection("battle_rooms").document(roomId).set(roomMap).await()
-        Log.i(TAG, "Created new online battle room: $roomId with code: $generatedCode as Host")
-        return Triple(roomId, generatedCode, true)
+        return try {
+            db.collection(COLLECTION_BATTLE_ROOMS).document(roomId).set(roomMap).await()
+            Log.i(TAG, "Created public online battle room $roomId (code $generatedCode)")
+            Result.success(Triple(roomId, generatedCode, true))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            handleFirestoreError(t, OperationType.CREATE, "$COLLECTION_BATTLE_ROOMS/$roomId")
+            Result.failure(t)
+        }
     }
 
     /**
@@ -270,55 +318,68 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
         user: UserProfile,
         subjectId: String,
         candidateQuestions: List<QuestionModel>
-    ): Pair<String, String> {
-        val db = firestore ?: throw IllegalStateException("Cloud Firestore is offline")
-        val currentUid = user.id.toString()
+    ): Result<Pair<String, String>> {
+        val db = firestore
+            ?: return Result.failure(IllegalStateException("Cloud Firestore is offline."))
+        val currentUid = try {
+            NamedFirestoreProvider.requireAuthenticatedUid(context)
+        } catch (e: Exception) {
+            return Result.failure(e)
+        }
+
         val now = System.currentTimeMillis()
         val roomCode = (100000..999999).random().toString()
         val roomId = "private_${now}_${(1000..9999).random()}"
         val selectedQuestions = candidateQuestions.shuffled().take(5)
-
-        val p1Map = mapOf(
-            "uid" to currentUid,
-            "name" to user.name.ifBlank { "Student" },
-            "school" to "Karnataka State Board",
-            "avatar" to user.avatar,
-            "standard" to user.standard,
-            "score" to 0,
-            "currentAnswer" to "",
-            "streak" to 0,
-            "answeredAt" to 0L
-        )
+        val p1Map = buildPlayerMap(currentUid, user)
 
         val roomMap = hashMapOf<String, Any>(
             "roomId" to roomId,
             "roomCode" to roomCode,
             "hostUid" to currentUid,
+            "participantUids" to listOf(currentUid),
             "isPrivate" to true,
-            "subject" to subjectId,
+            "subject" to subjectId.take(40),
             "standard" to user.standard,
             "status" to "WAITING",
             "currentRound" to 0,
             "roundStartTime" to 0L,
-            "createdAt" to now,
+            "createdAt" to FieldValue.serverTimestamp(),
+            "updatedAt" to FieldValue.serverTimestamp(),
             "questions" to questionsToMaps(selectedQuestions),
             "player1" to p1Map
         )
 
-        db.collection("battle_rooms").document(roomId).set(roomMap).await()
-        return Pair(roomId, roomCode)
+        return try {
+            db.collection(COLLECTION_BATTLE_ROOMS).document(roomId).set(roomMap).await()
+            Result.success(Pair(roomId, roomCode))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            handleFirestoreError(t, OperationType.CREATE, "$COLLECTION_BATTLE_ROOMS/$roomId")
+            Result.failure(t)
+        }
     }
 
     /**
      * Join an existing battle room using a 6-digit room code.
      */
     suspend fun joinByRoomCode(user: UserProfile, code: String): Result<String> {
-        val db = firestore ?: return Result.failure(IllegalStateException("Cloud Firestore is offline"))
+        val db = firestore
+            ?: return Result.failure(IllegalStateException("Cloud Firestore is offline."))
+        val currentUid = try {
+            NamedFirestoreProvider.requireAuthenticatedUid(context)
+        } catch (e: Exception) {
+            return Result.failure(e)
+        }
+
         val trimmed = code.trim().uppercase()
-        val currentUid = user.id.toString()
+        if (trimmed.length != 6) {
+            return Result.failure(IllegalArgumentException("Please enter a valid 6-digit room code."))
+        }
 
         return try {
-            val snapshot = db.collection("battle_rooms")
+            val snapshot = db.collection(COLLECTION_BATTLE_ROOMS)
                 .whereEqualTo("roomCode", trimmed)
                 .whereEqualTo("status", "WAITING")
                 .limit(1)
@@ -326,45 +387,44 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
                 .await()
 
             val doc = snapshot.documents.firstOrNull()
-                ?: return Result.failure(Exception("Room code '$trimmed' not found or match already started."))
+                ?: return Result.failure(IllegalStateException("Room code '$trimmed' not found or match already started."))
+
+            val hostUid = doc.getString("hostUid") ?: ""
+            if (hostUid == currentUid) {
+                return Result.failure(IllegalStateException("You cannot join your own room. Share code '$trimmed' with a friend!"))
+            }
 
             val roomId = doc.id
-            val p2Map = mapOf(
-                "uid" to currentUid,
-                "name" to user.name.ifBlank { "Student" },
-                "school" to "Karnataka State Board",
-                "avatar" to user.avatar,
-                "standard" to user.standard,
-                "score" to 0,
-                "currentAnswer" to "",
-                "streak" to 0,
-                "answeredAt" to 0L
-            )
-
-            db.collection("battle_rooms").document(roomId).update(
-                mapOf(
-                    "player2" to p2Map,
-                    "status" to "IN_PROGRESS",
-                    "roundStartTime" to System.currentTimeMillis()
-                )
-            ).await()
-
-            Result.success(roomId)
-        } catch (e: Exception) {
-            Result.failure(e)
+            val joined = joinRoomTransaction(db, roomId, currentUid, user)
+            if (joined) {
+                Result.success(roomId)
+            } else {
+                Result.failure(IllegalStateException("Room '$trimmed' is already full or no longer waiting."))
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            handleFirestoreError(t, OperationType.LIST, COLLECTION_BATTLE_ROOMS)
+            Result.failure(t)
         }
     }
 
     /**
      * Attaches a real-time snapshot listener to the active battle room.
      */
-    fun attachRoomListener(roomId: String, onUpdate: (OnlineRoomData) -> Unit) {
+    fun attachRoomListener(
+        roomId: String,
+        onUpdate: (OnlineRoomData) -> Unit,
+        onError: ((String) -> Unit)? = null
+    ) {
         detachListener()
         val db = firestore ?: return
-        activeRoomListener = db.collection("battle_rooms").document(roomId)
+        val path = "$COLLECTION_BATTLE_ROOMS/$roomId"
+        activeRoomListener = db.collection(COLLECTION_BATTLE_ROOMS).document(roomId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    Log.w(TAG, "Room listener error: ${error.message}")
+                    handleFirestoreError(error, OperationType.GET, path)
+                    onError?.invoke(error.localizedMessage ?: "Lost connection to battle room.")
                     return@addSnapshotListener
                 }
                 if (snapshot != null && snapshot.exists()) {
@@ -382,14 +442,18 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
     suspend fun submitPlayerAnswer(roomId: String, isHost: Boolean, answer: String, scoreDelta: Int) {
         val db = firestore ?: return
         val prefix = if (isHost) "player1" else "player2"
+        val path = "$COLLECTION_BATTLE_ROOMS/$roomId"
         try {
             val updates = hashMapOf<String, Any>(
-                "$prefix.currentAnswer" to answer,
-                "$prefix.answeredAt" to System.currentTimeMillis()
+                "$prefix.currentAnswer" to answer.take(500),
+                "$prefix.answeredAt" to System.currentTimeMillis(),
+                "updatedAt" to FieldValue.serverTimestamp()
             )
-            db.collection("battle_rooms").document(roomId).update(updates).await()
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed submitting answer: ${e.message}")
+            db.collection(COLLECTION_BATTLE_ROOMS).document(roomId).update(updates).await()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            handleFirestoreError(t, OperationType.UPDATE, path)
         }
     }
 
@@ -398,17 +462,21 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
      */
     suspend fun revealRound(roomId: String, p1Score: Int, p2Score: Int, p1Streak: Int, p2Streak: Int) {
         val db = firestore ?: return
+        val path = "$COLLECTION_BATTLE_ROOMS/$roomId"
         try {
             val updates = hashMapOf<String, Any>(
                 "status" to "ROUND_REVEAL",
                 "player1.score" to p1Score,
                 "player2.score" to p2Score,
                 "player1.streak" to p1Streak,
-                "player2.streak" to p2Streak
+                "player2.streak" to p2Streak,
+                "updatedAt" to FieldValue.serverTimestamp()
             )
-            db.collection("battle_rooms").document(roomId).update(updates).await()
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed revealing round: ${e.message}")
+            db.collection(COLLECTION_BATTLE_ROOMS).document(roomId).update(updates).await()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            handleFirestoreError(t, OperationType.UPDATE, path)
         }
     }
 
@@ -417,44 +485,53 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
      */
     suspend fun advanceToNextRound(roomId: String, nextRoundIndex: Int, isGameOver: Boolean, winnerUid: String?) {
         val db = firestore ?: return
+        val path = "$COLLECTION_BATTLE_ROOMS/$roomId"
         try {
             val updates = hashMapOf<String, Any>(
                 "status" to if (isGameOver) "COMPLETED" else "IN_PROGRESS",
                 "currentRound" to nextRoundIndex,
                 "roundStartTime" to System.currentTimeMillis(),
                 "player1.currentAnswer" to "",
-                "player2.currentAnswer" to ""
+                "player2.currentAnswer" to "",
+                "updatedAt" to FieldValue.serverTimestamp()
             )
             if (winnerUid != null) {
                 updates["winnerUid"] = winnerUid
             }
-            db.collection("battle_rooms").document(roomId).update(updates).await()
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed advancing round: ${e.message}")
+            db.collection(COLLECTION_BATTLE_ROOMS).document(roomId).update(updates).await()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            handleFirestoreError(t, OperationType.UPDATE, path)
         }
     }
 
-    /**
-     * Detach real-time listener and cleans up active room.
-     */
     fun detachListener() {
         activeRoomListener?.remove()
         activeRoomListener = null
     }
 
-    /**
-     * Leaves or cancels the room.
-     */
     suspend fun cancelRoom(roomId: String) {
         detachListener()
         val db = firestore ?: return
+        val path = "$COLLECTION_BATTLE_ROOMS/$roomId"
         try {
-            db.collection("battle_rooms").document(roomId).update("status", "CANCELLED").await()
-        } catch (_: Exception) {}
+            db.collection(COLLECTION_BATTLE_ROOMS).document(roomId).update(
+                mapOf(
+                    "status" to "CANCELLED",
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            ).await()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            handleFirestoreError(t, OperationType.UPDATE, path)
+        }
     }
 
     companion object {
         private const val TAG = "RealOnlineBattleManager"
+        private const val COLLECTION_BATTLE_ROOMS = "battle_rooms"
 
         @SuppressLint("StaticFieldLeak")
         @Volatile

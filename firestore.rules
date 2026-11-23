@@ -1,6 +1,11 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
 
     function isSignedIn() {
       return request.auth != null;
@@ -10,36 +15,225 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    match /questions/{questionId} {
-      allow read, write: if true;
+    function isBootstrappedAdmin() {
+      return isSignedIn()
+        && 'email' in request.auth.token
+        && 'email_verified' in request.auth.token
+        && request.auth.token.email == "somas211@gmail.com"
+        && request.auth.token.email_verified == true;
     }
 
-    match /quiz_questions/{questionId} {
-      allow read, write: if true;
+    function isAdmin() {
+      return isBootstrappedAdmin()
+        || (isSignedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN');
     }
+
+    function isTeacherOrAdmin() {
+      return isAdmin()
+        || (isSignedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'TEACHER');
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string
+        && id.size() >= 1
+        && id.size() <= 128
+        && !id.matches('.*(/|\\.\\.).*');
+    }
+
+    function isNonEmptyString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function createdAtUnchanged() {
+      return !('createdAt' in existing())
+        || incoming().createdAt == existing().createdAt;
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUserAccount(data, userId) {
+      return data.uid == userId
+        && (!('displayName' in data) || isNonEmptyString(data.displayName, 1, 100))
+        && (!('email' in data) || (data.email is string && data.email.size() <= 200))
+        && (!('standard' in data) || (data.standard is int && data.standard >= 1 && data.standard <= 12))
+        && (!('trialStartMillis' in data) || (data.trialStartMillis is int && data.trialStartMillis >= 0))
+        && (!('subscriptionActive' in data) || data.subscriptionActive is bool)
+        && (!('subscriptionAutoRenewing' in data) || data.subscriptionAutoRenewing is bool)
+        && (!('subscriptionProductId' in data) || (data.subscriptionProductId is string && data.subscriptionProductId.size() <= 100))
+        && (!('role' in data) || data.role in ['STUDENT', 'TEACHER', 'ADMIN'])
+        && (!('createdAt' in data) || (data.createdAt is timestamp && data.createdAt <= request.time) || data.createdAt is int)
+        && (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time) || data.updatedAt is int);
+    }
+
+    function cannotSelfEscalateAdmin() {
+      return !('role' in incoming())
+        || incoming().role != 'ADMIN'
+        || isAdmin()
+        || (resource != null && existing().role == 'ADMIN');
+    }
+
+    function isValidStudent(data) {
+      return isNonEmptyString(data.name, 1, 100)
+        && data.standard is int && data.standard >= 1 && data.standard <= 12
+        && (!('coins' in data) || (data.coins is int && data.coins >= 0 && data.coins <= 10000000))
+        && (!('stars' in data) || (data.stars is int && data.stars >= 0 && data.stars <= 1000000))
+        && (!('xp' in data) || (data.xp is int && data.xp >= 0 && data.xp <= 10000000))
+        && (!('attendanceStreak' in data) || (data.attendanceStreak is int && data.attendanceStreak >= 0 && data.attendanceStreak <= 10000));
+    }
+
+    function isValidQuestion(data) {
+      return isNonEmptyString(data.id, 1, 128)
+        && isNonEmptyString(data.questionText, 1, 2000)
+        && isNonEmptyString(data.correctAnswer, 1, 500)
+        && (!('options' in data) || (data.options is list && data.options.size() <= 8))
+        && (!('stdId' in data) || (data.stdId is int && data.stdId >= 1 && data.stdId <= 12));
+    }
+
+    function isValidBattleRoomCreate(data, roomId) {
+      return data.roomId == roomId
+        && isNonEmptyString(data.roomCode, 6, 8)
+        && data.hostUid == request.auth.uid
+        && data.status == 'WAITING'
+        && data.isPrivate is bool
+        && data.standard is int && data.standard >= 1 && data.standard <= 12
+        && isNonEmptyString(data.subject, 1, 60)
+        && data.currentRound is int && data.currentRound == 0
+        && data.participantUids is list
+        && data.participantUids.size() == 1
+        && data.participantUids[0] == request.auth.uid
+        && data.player1 is map
+        && data.player1.uid == request.auth.uid
+        && data.questions is list && data.questions.size() <= 10
+        && data.createdAt is timestamp && data.createdAt <= request.time
+        && data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isJoiningWaitingRoom() {
+      return existing().status == 'WAITING'
+        && existing().hostUid != request.auth.uid
+        && (!('player2Uid' in existing()) || existing().player2Uid == null)
+        && incoming().status == 'IN_PROGRESS'
+        && incoming().player2Uid == request.auth.uid
+        && incoming().player2 is map
+        && incoming().player2.uid == request.auth.uid
+        && incoming().participantUids is list
+        && incoming().participantUids.size() == 2
+        && existing().hostUid in incoming().participantUids
+        && request.auth.uid in incoming().participantUids;
+    }
+
+    function isBattleParticipant() {
+      return request.auth.uid == existing().hostUid
+        || ('player2Uid' in existing() && request.auth.uid == existing().player2Uid);
+    }
+
+    function isValidBattleRoomUpdate() {
+      return existing().status != 'COMPLETED'
+        && existing().status != 'CANCELLED'
+        && incoming().roomId == existing().roomId
+        && incoming().roomCode == existing().roomCode
+        && incoming().hostUid == existing().hostUid
+        && createdAtUnchanged()
+        && incoming().status in ['WAITING', 'IN_PROGRESS', 'ROUND_REVEAL', 'COMPLETED', 'CANCELLED']
+        && incoming().currentRound is int && incoming().currentRound >= 0 && incoming().currentRound <= 20
+        && incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+    }
+
+    // ===============================================================
+    // Collections
+    // ===============================================================
 
     match /users/{userId} {
-      allow read, write: if true;
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if (isOwner(userId) || isAdmin())
+        && isValidId(userId)
+        && isValidUserAccount(incoming(), userId)
+        && cannotSelfEscalateAdmin();
+      allow update: if (isOwner(userId) || isAdmin())
+        && isValidUserAccount(incoming(), userId)
+        && createdAtUnchanged()
+        && cannotSelfEscalateAdmin();
+      allow delete: if isAdmin();
 
-      match /{allSubcollections=**} {
-        allow read, write: if true;
+      match /quiz_results/{resultId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create, update: if (isOwner(userId) || isAdmin())
+          && isValidId(resultId)
+          && incoming().userId == userId
+          && incoming().score is int && incoming().score >= 0;
+        allow delete: if isOwner(userId) || isAdmin();
       }
     }
 
     match /students/{studentId} {
-      allow read, write: if true;
+      allow read: if isOwner(studentId) || isAdmin();
+      allow create: if (isOwner(studentId) || isAdmin())
+        && isValidId(studentId)
+        && isValidStudent(incoming());
+      allow update: if (isOwner(studentId) || isAdmin())
+        && isValidStudent(incoming())
+        && createdAtUnchanged();
+      allow delete: if isAdmin();
 
-      match /{allSubcollections=**} {
-        allow read, write: if true;
+      match /unit_progress/{unitId} {
+        allow read, write: if isOwner(studentId) || isAdmin();
+      }
+
+      match /historical_scores/{scoreId} {
+        allow read, write: if isOwner(studentId) || isAdmin();
       }
     }
 
-    match /battle_rooms/{roomId} {
-      allow read, write: if true;
+    match /questions/{questionId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin()
+        && isValidId(questionId)
+        && isValidQuestion(incoming());
+      allow delete: if isTeacherOrAdmin();
+    }
 
-      match /{allSubcollections=**} {
-        allow read, write: if true;
-      }
+    match /quiz_questions/{questionId} {
+      allow read: if isSignedIn();
+      allow create, update: if isTeacherOrAdmin()
+        && isValidId(questionId)
+        && isValidQuestion(incoming());
+      allow delete: if isTeacherOrAdmin();
+    }
+
+    match /battle_rooms/{roomId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn()
+        && (resource.data.status == 'WAITING'
+          || request.auth.uid == resource.data.hostUid
+          || (resource.data.participantUids is list && request.auth.uid in resource.data.participantUids));
+      allow create: if isSignedIn()
+        && isValidId(roomId)
+        && isValidBattleRoomCreate(incoming(), roomId);
+      allow update: if isSignedIn()
+        && isValidBattleRoomUpdate()
+        && (isJoiningWaitingRoom() || isBattleParticipant());
+      allow delete: if isAdmin()
+        || (isSignedIn() && existing().hostUid == request.auth.uid && existing().status == 'WAITING');
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

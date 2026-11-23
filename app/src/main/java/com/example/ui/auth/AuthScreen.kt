@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -37,6 +38,7 @@ import com.example.QuizViewModel
 import com.example.auth.AuthUiState
 import com.example.auth.AuthUser
 import com.example.auth.CloudSyncState
+import com.example.auth.FirebaseAuthManager
 import com.example.auth.UserRole
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +58,7 @@ fun AuthDialog(
     var displayName by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
@@ -162,12 +165,15 @@ fun AuthDialog(
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
                             )
+                            val isTeacherLocked = FirebaseAuthManager.IS_TEACHER_AUTH_LOCKED
+                            val isAdminLocked = FirebaseAuthManager.IS_ADMIN_AUTH_LOCKED
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 UserRole.values().forEach { role ->
-                                    val isLocked = role == UserRole.ADMIN
+                                    val isLocked = (role == UserRole.ADMIN && isAdminLocked) ||
+                                        (role == UserRole.TEACHER && isTeacherLocked)
                                     val isSelected = selectedRole == role && !isLocked
                                     FilterChip(
                                         selected = isSelected,
@@ -180,11 +186,13 @@ fun AuthDialog(
                                             Text(
                                                 text = when (role) {
                                                     UserRole.STUDENT -> "🎓 Student"
-                                                    UserRole.TEACHER -> "👨‍🏫 Teacher"
-                                                    UserRole.ADMIN -> "Admin (Locked)"
+                                                    UserRole.TEACHER -> if (isTeacherLocked) "Teacher" else "👨‍🏫 Teacher"
+                                                    UserRole.ADMIN -> if (isAdminLocked) "Admin" else "🛡️ Admin"
                                                 },
                                                 fontSize = 11.sp,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                         },
                                         modifier = Modifier.weight(1f)
@@ -281,9 +289,12 @@ fun AuthDialog(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // --- QUICK DEMO LOGINS FOR RBAC EVALUATION ---
+                        val isTeacherLocked = FirebaseAuthManager.IS_TEACHER_AUTH_LOCKED
+                        val isAdminLocked = FirebaseAuthManager.IS_ADMIN_AUTH_LOCKED
+
+                        // --- QUICK DEMO LOGINS ---
                         Text(
-                            text = "⚡ Quick Demo Logins (Role Testing):",
+                            text = "⚡ Quick Demo Logins:",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -296,29 +307,47 @@ fun AuthDialog(
                         ) {
                             OutlinedButton(
                                 onClick = {
-                                    keyboardController?.hide()
-                                    focusManager.clearFocus()
-                                    viewModel.signInDemoTeacher()
-                                    onDismiss()
+                                    if (!isTeacherLocked) {
+                                        keyboardController?.hide()
+                                        focusManager.clearFocus()
+                                        viewModel.signInDemoTeacher()
+                                        onDismiss()
+                                    }
                                 },
+                                enabled = !isTeacherLocked,
                                 shape = RoundedCornerShape(10.dp),
                                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
-                                modifier = Modifier.weight(1f).height(36.dp)
+                                modifier = Modifier.weight(1f).height(36.dp).testTag("auth_demo_teacher_button")
                             ) {
-                                Text("👨‍🏫 Teacher", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                if (isTeacherLocked) {
+                                    Icon(Icons.Default.Lock, contentDescription = "Teacher Locked", modifier = Modifier.size(12.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("Teacher", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                } else {
+                                    Text("👨‍🏫 Teacher", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                }
                             }
                             OutlinedButton(
                                 onClick = {
-                                    keyboardController?.hide()
-                                    focusManager.clearFocus()
-                                    viewModel.signInDemoAdmin()
-                                    onDismiss()
+                                    if (!isAdminLocked) {
+                                        keyboardController?.hide()
+                                        focusManager.clearFocus()
+                                        viewModel.signInDemoAdmin()
+                                        onDismiss()
+                                    }
                                 },
+                                enabled = !isAdminLocked,
                                 shape = RoundedCornerShape(10.dp),
                                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
-                                modifier = Modifier.weight(1f).height(36.dp)
+                                modifier = Modifier.weight(1f).height(36.dp).testTag("auth_demo_admin_button")
                             ) {
-                                Text("🛡️ Admin", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                if (isAdminLocked) {
+                                    Icon(Icons.Default.Lock, contentDescription = "Admin Locked", modifier = Modifier.size(12.dp))
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text("Admin", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                } else {
+                                    Text("🛡️ Admin", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                }
                             }
                             OutlinedButton(
                                 onClick = {
@@ -329,7 +358,7 @@ fun AuthDialog(
                                 },
                                 shape = RoundedCornerShape(10.dp),
                                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
-                                modifier = Modifier.weight(1f).height(36.dp)
+                                modifier = Modifier.weight(1f).height(36.dp).testTag("auth_demo_student_button")
                             ) {
                                 Text("🎓 Student", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                             }
@@ -337,20 +366,41 @@ fun AuthDialog(
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        // Anonymous / Guest Login
-                        OutlinedButton(
+                        // Genuine Student Google Sign-In via Jetpack Credential Manager
+                        Button(
                             onClick = {
                                 keyboardController?.hide()
                                 focusManager.clearFocus()
-                                viewModel.signInAnonymously()
+                                val googleRole = if (
+                                    (isAdminLocked && selectedRole == UserRole.ADMIN) ||
+                                    (isTeacherLocked && selectedRole == UserRole.TEACHER)
+                                ) {
+                                    UserRole.STUDENT
+                                } else {
+                                    selectedRole
+                                }
+                                viewModel.signInWithGoogle(
+                                    activityContext = context,
+                                    role = googleRole
+                                )
                             },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isDark) Color.White else Color(0xFF111827),
+                                contentColor = if (isDark) Color(0xFF111827) else Color.White
+                            ),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(40.dp)
-                                .testTag("auth_guest_button"),
+                                .height(48.dp)
+                                .testTag("auth_google_signin_button"),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Continue as Guest (Student Level)", fontSize = 12.sp)
+                            Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "Google Sign-In",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Sign in with Google (Student)", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
 
                         Spacer(modifier = Modifier.height(10.dp))
@@ -360,7 +410,13 @@ fun AuthDialog(
                             onClick = { isSignUpMode = !isSignUpMode }
                         ) {
                             Text(
-                                text = if (isSignUpMode) "Already have an account? Sign In" else "Create New Account / Register Faculty",
+                                text = if (isSignUpMode) {
+                                    "Already have an account? Sign In"
+                                } else if (isTeacherLocked) {
+                                    "Create New Student Account"
+                                } else {
+                                    "Create New Account / Register Faculty"
+                                },
                                 color = Color(0xFF4F46E5),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
@@ -463,9 +519,12 @@ fun AuthenticatedUserInfo(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Role Switcher for Fast Evaluation
+            val isTeacherLocked = FirebaseAuthManager.IS_TEACHER_AUTH_LOCKED
+            val isAdminLocked = FirebaseAuthManager.IS_ADMIN_AUTH_LOCKED
+
+            // Role Switcher (respects Teacher & Admin policy locks)
             Text(
-                text = "⚡ Switch Role (RBAC Testing):",
+                text = "Account Role:",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -477,6 +536,8 @@ fun AuthenticatedUserInfo(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 UserRole.values().forEach { role ->
+                    val isLocked = (role == UserRole.TEACHER && isTeacherLocked) ||
+                        (role == UserRole.ADMIN && isAdminLocked)
                     val isCurrent = user.role == role
                     val roleColor = when (role) {
                         UserRole.ADMIN -> Color(0xFF7C3AED)
@@ -484,12 +545,23 @@ fun AuthenticatedUserInfo(
                         UserRole.STUDENT -> Color(0xFF2563EB)
                     }
                     Surface(
-                        onClick = { viewModel.updateUserRole(role) },
+                        onClick = { if (!isLocked) viewModel.updateUserRole(role) },
+                        enabled = !isLocked,
                         shape = RoundedCornerShape(10.dp),
-                        color = if (isCurrent) roleColor.copy(alpha = 0.16f) else if (isDark) Color(0xFF334155).copy(alpha = 0.4f) else Color(0xFFF1F5F9),
+                        color = when {
+                            isLocked -> if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)
+                            isCurrent -> roleColor.copy(alpha = 0.16f)
+                            isDark -> Color(0xFF334155).copy(alpha = 0.4f)
+                            else -> Color(0xFFF1F5F9)
+                        },
                         border = BorderStroke(
                             1.dp,
-                            if (isCurrent) roleColor else if (isDark) Color(0xFF475569) else Color(0xFFCBD5E1)
+                            when {
+                                isLocked -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                isCurrent -> roleColor
+                                isDark -> Color(0xFF475569)
+                                else -> Color(0xFFCBD5E1)
+                            }
                         ),
                         modifier = Modifier.weight(1f)
                     ) {
@@ -500,15 +572,28 @@ fun AuthenticatedUserInfo(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            if (isLocked) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = "Locked",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(11.dp)
+                                )
+                                Spacer(modifier = Modifier.width(3.dp))
+                            }
                             Text(
                                 text = when (role) {
                                     UserRole.STUDENT -> "🎓 Student"
-                                    UserRole.TEACHER -> "👨‍🏫 Teacher"
-                                    UserRole.ADMIN -> "🛡️ Admin"
+                                    UserRole.TEACHER -> if (isLocked) "Teacher" else "👨‍🏫 Teacher"
+                                    UserRole.ADMIN -> if (isLocked) "Admin" else "🛡️ Admin"
                                 },
                                 fontSize = 11.sp,
-                                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isCurrent) roleColor else MaterialTheme.colorScheme.onSurface,
+                                fontWeight = if (isCurrent && !isLocked) FontWeight.Bold else FontWeight.Medium,
+                                color = when {
+                                    isLocked -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
+                                    isCurrent -> roleColor
+                                    else -> MaterialTheme.colorScheme.onSurface
+                                },
                                 maxLines = 1
                             )
                         }
@@ -518,23 +603,36 @@ fun AuthenticatedUserInfo(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            val localContext = LocalContext.current
             Surface(
                 shape = RoundedCornerShape(8.dp),
                 color = if (isDark) Color(0xFF0F172A) else Color(0xFFF1F5F9),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(10.dp)) {
+                Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Firebase UID: ${user.uid.take(16)}...",
+                        text = "Firebase UID: ${user.uid.take(20)}",
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = if (user.isAnonymous) "Status: Guest Mode" else "Status: Verified Account",
-                        fontSize = 10.sp,
+                        text = if (user.isFirebaseVerified) "Status: Verified Google Firebase Account" else "Status: Local Offline Profile (Connect Google for 1v1 Online)",
+                        fontSize = 10.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF10B981)
+                        color = if (user.isFirebaseVerified) Color(0xFF10B981) else Color(0xFFD97706)
                     )
+                    if (!user.isFirebaseVerified) {
+                        Button(
+                            onClick = { viewModel.signInWithGoogle(localContext, UserRole.STUDENT) },
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp)
+                                .testTag("auth_link_google_button")
+                        ) {
+                            Text("Sign in with Google for Cloud & 1v1", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
 

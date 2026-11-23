@@ -50,7 +50,9 @@ object NmmsSatSocialQuestionBank {
         )
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("NmmsSatSocial") {
+            listOf(
         // ========================================================
         // ಘಟಕ 1: ಇತಿಹಾಸ (History) - Unit 1 (45 Questions)
         // ========================================================
@@ -2714,4 +2716,5 @@ object NmmsSatSocialQuestionBank {
             explanation = "ಜಿ.ಡಿ.ಪಿ (GDP) ಒಂದು ರಾಷ್ಟ್ರದ ಆರ್ಥಿಕತೆಯ ಗಾತ್ರ ಮತ್ತು ಬೆಳವಣಿಗೆಯನ್ನು ಅಳೆಯುವ ಅತ್ಯಂತ ಪ್ರಮುಖ ಅಂತರರಾಷ್ಟ್ರೀಯ ಸೂಚಕವಾಗಿದೆ. [NMMS-2023]"
         )
     )
+        }
 }

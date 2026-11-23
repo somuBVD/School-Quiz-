@@ -21,7 +21,9 @@ object Std6ScienceQuestionBank {
         UnitTemplate(12, "ಅಧ್ಯಾಯ 12: ಭೂಮಿಯಿಂದ ಆಚೆ", 8, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std6Science") {
+            listOf(
         // ==================== ಅಧ್ಯಾಯ 1: ವಿಜ್ಞಾನದ ಅದ್ಭುತ ಪ್ರಪಂಚ ====================
         QuestionModel(
             id = "s_6_sci_u1_1",
@@ -2247,4 +2249,5 @@ object Std6ScienceQuestionBank {
             explanation = "ಗುರು ಗ್ರಹವು (Jupiter) ಸೌರವ್ಯೂಹದ ಅತ್ಯಂತ ಬೃಹತ್ ಗ್ರಹವಾಗಿದೆ."
         )
     )
+        }
 }

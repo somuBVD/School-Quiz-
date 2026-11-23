@@ -11,7 +11,9 @@ package com.example.data
  */
 object Std7MathsPart2UnitsBank {
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std7MathsPart2") {
+            listOf(
         // ==================== ಘಟಕ 6: ರಚನೆಗಳು ಮತ್ತು ನೆಲಹಾಸುಗಳು (Constructions & Tessellations) ====================
         QuestionModel(
             id = "s_7_mat_u6_1",
@@ -979,4 +981,5 @@ object Std7MathsPart2UnitsBank {
             explanation = "45 × 5 = 225 => 2.25."
         )
     )
+        }
 }

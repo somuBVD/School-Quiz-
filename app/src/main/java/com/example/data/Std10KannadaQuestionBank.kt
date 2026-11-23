@@ -57,7 +57,9 @@ object Std10KannadaQuestionBank {
         UnitTemplate(22, "ಪೂರಕ 6: ಶುಕನಾಸನ ಉಪದೇಶ", 10, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std10Kannada") {
+            listOf(
         QuestionModel(
             id = "std10_kan_u1_q1",
             stdId = 10,
@@ -2699,4 +2701,5 @@ object Std10KannadaQuestionBank {
             mediaRes = ""
         )
     )
+        }
 }

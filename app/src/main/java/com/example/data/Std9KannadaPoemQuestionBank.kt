@@ -18,7 +18,9 @@ object Std9KannadaPoemQuestionBank {
         UnitTemplate(16, "ಘಟಕ 16: ಕನ್ನಡ ನಾಡು ನುಡಿ (ಶ್ರೀ ವಿಜಯ, ನಯಸೇನ, ನೇಮಿಚಂದ್ರ, ಮಹಲಿಂಗರಂಗ, ಆಂಡಯ್ಯ)", 19, "Easy")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std9KannadaPoem") {
+            listOf(
         // ==========================================
         // ಘಟಕ 9: ಪಾರಿವಾಳ (ಸು.ರಂ. ಎಕ್ಕುಂಡಿ)
         // ==========================================
@@ -1954,4 +1956,5 @@ object Std9KannadaPoemQuestionBank {
             explanation = "ಕಬ್ಬಿಗರ ಕಾವದಲ್ಲಿ ಆಂಡಯ್ಯ ಕವಿಯು ಕನ್ನಡನಾಡಿನ ಫಲಪುಷ್ಪ ಸಂಪತ್ತನ್ನು ಬಣ್ಣಿಸಿದ್ದಾನೆ."
         )
     )
+        }
 }

@@ -12,7 +12,9 @@ package com.example.data
  */
 object Std7SocialPart1QuestionBank {
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std7SocialPart1") {
+            listOf(
         // ==========================================
         // ಘಟಕ 1: ಜಗತ್ತಿನ ಪ್ರಮುಖ ಘಟನೆಗಳು
         // ==========================================
@@ -444,4 +446,5 @@ object Std7SocialPart1QuestionBank {
             explanation = "ಶಿವಾಜಿಯ ಆಡಳಿತದಲ್ಲಿ ಪ್ರಧಾನಿ (ಪೇಶ್ವೆ) ಸೇರಿದಂತೆ 8 ಜನ ಸಚಿವರಿದ್ದ 'ಅಷ್ಟಪ್ರಧಾನ' ಮಂಡಳಿ ಇತ್ತು."
         )
     )
+        }
 }

@@ -9,7 +9,9 @@ package com.example.data
  */
 object Std7MathsExtraUnitsBank {
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std7MathsExtra") {
+            listOf(
         // ==================== ಘಟಕ 3 — ದಶಮಾಂಶಗಳು (Decimals) ====================
         QuestionModel(
             id = "s_7_mat_u3_1",
@@ -1215,4 +1217,5 @@ object Std7MathsExtraUnitsBank {
             explanation = "ಛೇದಕ ರೇಖೆಯ ಒಂದೇ ಬದಿಯ ಆಂತರಿಕ ಕೋನಗಳು ಪರಿಪೂರಕವಾಗಿರುತ್ತವೆ (ಮೊತ್ತ = 180°)."
         )
     )
+        }
 }

@@ -18,7 +18,9 @@ object Std9KannadaProseQuestionBank {
         UnitTemplate(8, "ಘಟಕ 8: ಹರಲೀಲೆ (ಹರಿಹರ)", 35, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std9KannadaProse") {
+            listOf(
         // ==========================================
         // ಘಟಕ 1: ಪ್ರಜಾನಿಷ್ಠೆ (ಸಾ.ಶಿ. ಮರುಳಯ್ಯ)
         // ==========================================
@@ -2647,4 +2649,5 @@ object Std9KannadaProseQuestionBank {
             explanation = "ಶಾಪಗ್ರಸ್ತರಾದ ಇಬ್ಬರು ರುದ್ರಕನ್ನಿಕೆಯರು ತಿರುವಾರೂರು ಮತ್ತು ತಿರುವತ್ತಿಯೂರಿನಲ್ಲಿ ಪರವೆ ಮತ್ತು ಸಂಕಿಲೆಯಾಗಿ ಜನಿಸಿದರು."
         )
     )
+        }
 }

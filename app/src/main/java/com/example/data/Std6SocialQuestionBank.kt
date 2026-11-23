@@ -24,7 +24,9 @@ object Std6SocialQuestionBank {
         UnitTemplate(12, "ಭೂಗೋಳ: ಅಧ್ಯಾಯ 12 - ಏಷ್ಯಾ: ವೈವಿಧ್ಯತೆಗಳ ಖಂಡ", 11, "Medium")
     )
 
-    val questions: List<QuestionModel> = listOf(
+    val questions: List<QuestionModel>
+        get() = QuestionBankCache.getOrLoad("Std6Social") {
+            listOf(
         // ==========================================
         // ಭಾಗ 1 — ಇತಿಹಾಸ
         // ಅಧ್ಯಾಯ 1: ಇತಿಹಾಸ ಪರಿಚಯ ಮತ್ತು ಆರಂಭಿಕ ಸಮಾಜ (18 ಪ್ರಶ್ನೆಗಳು)
@@ -2342,4 +2344,5 @@ object Std6SocialQuestionBank {
             explanation = "ಭಾರತ ಮತ್ತು ಶ್ರೀಲಂಕಾ ನಡುವೆ ಪಾಕ್ ಜಲಸಂಧಿ (Palk Strait) ಇದೆ."
         )
     )
+        }
 }

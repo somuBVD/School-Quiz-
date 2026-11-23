@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.example.QuizViewModel
 import com.example.auth.AuthUiState
 import com.example.auth.AuthUser
+import com.example.auth.FirebaseAuthManager
 import com.example.auth.UserRole
 
 /**
@@ -53,6 +54,10 @@ fun AdminAuthGate(
     var password by remember { mutableStateOf("") }
     var displayName by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    val isTeacherLocked = FirebaseAuthManager.IS_TEACHER_AUTH_LOCKED
+    val isAdminLocked = FirebaseAuthManager.IS_ADMIN_AUTH_LOCKED
+    val isStaffPortalLocked = isTeacherLocked && isAdminLocked
 
     val primaryIndigo = Color(0xFF4F46E5)
     val cardBg = if (isDark) Color(0xFF1E293B) else Color.White
@@ -192,6 +197,36 @@ fun AdminAuthGate(
                     }
                 }
 
+                if (isStaffPortalLocked) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFF59E0B).copy(alpha = 0.14f),
+                        border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.5f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("admin_teacher_locked_banner")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = "Teacher & Admin Locked",
+                                tint = Color(0xFFD97706),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Teacher & Admin signup/login are currently locked. Students can sign in with Google or a Student profile.",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E)
+                            )
+                        }
+                    }
+                }
+
                 // If Registering, Select Role
                 if (isSignUpMode) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -207,10 +242,11 @@ fun AdminAuthGate(
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             listOf(
-                                UserRole.TEACHER to "👨‍🏫 Teacher",
-                                UserRole.ADMIN to "Admin (Locked)"
+                                UserRole.TEACHER to if (isTeacherLocked) "Teacher (Locked)" else "👨‍🏫 Teacher",
+                                UserRole.ADMIN to if (isAdminLocked) "Admin (Locked)" else "🛡️ Admin"
                             ).forEach { (role, label) ->
-                                val isLocked = role == UserRole.ADMIN
+                                val isLocked = (role == UserRole.ADMIN && isAdminLocked) ||
+                                    (role == UserRole.TEACHER && isTeacherLocked)
                                 val selected = selectedRole == role && !isLocked
                                 FilterChip(
                                     selected = selected,
@@ -301,9 +337,20 @@ fun AdminAuthGate(
                         .testTag("admin_auth_submit_button"),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryIndigo),
-                    enabled = email.isNotBlank() && password.length >= 6
+                    enabled = !isStaffPortalLocked && email.isNotBlank() && password.length >= 6
                 ) {
-                    if (authState is AuthUiState.Loading) {
+                    if (isStaffPortalLocked) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Locked",
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "TEACHER & ADMIN LOGIN LOCKED",
+                            fontWeight = FontWeight.Bold
+                        )
+                    } else if (authState is AuthUiState.Loading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(18.dp),
                             color = Color.White,
@@ -356,12 +403,21 @@ fun AdminAuthGate(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                // Teacher Demo Button
+                // Teacher Demo Button (Locked while FirebaseAuthManager.IS_TEACHER_AUTH_LOCKED is true)
                 Surface(
-                    onClick = { viewModel.signInDemoTeacher() },
+                    onClick = { if (!isTeacherLocked) viewModel.signInDemoTeacher() },
+                    enabled = !isTeacherLocked,
                     shape = RoundedCornerShape(14.dp),
-                    color = Color(0xFF0D9488).copy(alpha = 0.08f),
-                    border = BorderStroke(1.2.dp, Color(0xFF0D9488)),
+                    color = if (isTeacherLocked) {
+                        (if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)).copy(alpha = 0.6f)
+                    } else {
+                        Color(0xFF0D9488).copy(alpha = 0.08f)
+                    },
+                    border = if (isTeacherLocked) {
+                        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    } else {
+                        BorderStroke(1.2.dp, Color(0xFF0D9488))
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("demo_sign_in_teacher")
@@ -384,10 +440,12 @@ fun AdminAuthGate(
                                     text = "Mrs. Sharma",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isDark) Color(0xFF5EEAD4) else Color(0xFF0D9488)
+                                    color = if (isTeacherLocked) {
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    } else if (isDark) Color(0xFF5EEAD4) else Color(0xFF0D9488)
                                 )
                                 Text(
-                                    text = "teacher.sharma@school.edu",
+                                    text = if (isTeacherLocked) "Teacher login currently locked" else "teacher.sharma@school.edu",
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -396,16 +454,38 @@ fun AdminAuthGate(
                         Spacer(modifier = Modifier.width(8.dp))
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF0D9488).copy(alpha = 0.18f),
-                            border = BorderStroke(1.dp, Color(0xFF0D9488).copy(alpha = 0.4f))
-                        ) {
-                            Text(
-                                text = "TEACHER ROLE",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = if (isDark) Color(0xFF5EEAD4) else Color(0xFF0D9488),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            color = if (isTeacherLocked) {
+                                Color(0xFFEF4444).copy(alpha = 0.14f)
+                            } else {
+                                Color(0xFF0D9488).copy(alpha = 0.18f)
+                            },
+                            border = BorderStroke(
+                                1.dp,
+                                if (isTeacherLocked) Color(0xFFEF4444).copy(alpha = 0.35f) else Color(0xFF0D9488).copy(alpha = 0.4f)
                             )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (isTeacherLocked) {
+                                    Icon(
+                                        imageVector = Icons.Default.Lock,
+                                        contentDescription = "Locked",
+                                        tint = Color(0xFFDC2626),
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                }
+                                Text(
+                                    text = if (isTeacherLocked) "LOCKED" else "TEACHER ROLE",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = if (isTeacherLocked) {
+                                        Color(0xFFDC2626)
+                                    } else if (isDark) Color(0xFF5EEAD4) else Color(0xFF0D9488)
+                                )
+                            }
                         }
                     }
                 }
@@ -876,6 +956,8 @@ fun FacultyHeaderBar(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     UserRole.values().forEach { r ->
+                        val isLocked = (r == UserRole.TEACHER && FirebaseAuthManager.IS_TEACHER_AUTH_LOCKED) ||
+                            (r == UserRole.ADMIN && FirebaseAuthManager.IS_ADMIN_AUTH_LOCKED)
                         val isActive = role == r
                         val targetRoleColor = when (r) {
                             UserRole.ADMIN -> Color(0xFF7C3AED)
@@ -883,12 +965,23 @@ fun FacultyHeaderBar(
                             UserRole.STUDENT -> Color(0xFF2563EB)
                         }
                         Surface(
-                            onClick = { viewModel.updateUserRole(r) },
+                            onClick = { if (!isLocked) viewModel.updateUserRole(r) },
+                            enabled = !isLocked,
                             shape = RoundedCornerShape(10.dp),
-                            color = if (isActive) targetRoleColor.copy(alpha = 0.16f) else if (isDark) Color(0xFF334155).copy(alpha = 0.4f) else Color(0xFFF1F5F9),
+                            color = when {
+                                isLocked -> if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)
+                                isActive -> targetRoleColor.copy(alpha = 0.16f)
+                                isDark -> Color(0xFF334155).copy(alpha = 0.4f)
+                                else -> Color(0xFFF1F5F9)
+                            },
                             border = BorderStroke(
                                 1.dp,
-                                if (isActive) targetRoleColor else if (isDark) Color(0xFF475569) else Color(0xFFCBD5E1)
+                                when {
+                                    isLocked -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                    isActive -> targetRoleColor
+                                    isDark -> Color(0xFF475569)
+                                    else -> Color(0xFFCBD5E1)
+                                }
                             ),
                             modifier = Modifier.weight(1f)
                         ) {
@@ -899,15 +992,28 @@ fun FacultyHeaderBar(
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                if (isLocked) {
+                                    Icon(
+                                        imageVector = Icons.Default.Lock,
+                                        contentDescription = "Locked",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                }
                                 Text(
                                     text = when (r) {
                                         UserRole.STUDENT -> "🎓 Student"
-                                        UserRole.TEACHER -> "👨‍🏫 Teacher"
-                                        UserRole.ADMIN -> "🛡️ Admin"
+                                        UserRole.TEACHER -> if (isLocked) "Teacher" else "👨‍🏫 Teacher"
+                                        UserRole.ADMIN -> if (isLocked) "Admin" else "🛡️ Admin"
                                     },
                                     fontSize = 11.sp,
-                                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isActive) targetRoleColor else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = if (isActive && !isLocked) FontWeight.Bold else FontWeight.Medium,
+                                    color = when {
+                                        isLocked -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
+                                        isActive -> targetRoleColor
+                                        else -> MaterialTheme.colorScheme.onSurface
+                                    },
                                     maxLines = 1
                                 )
                             }
