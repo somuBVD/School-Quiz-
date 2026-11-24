@@ -224,6 +224,37 @@ class FirebaseCloudSyncManager(private val context: Context) {
                 .set(studentData, SetOptions.merge())
                 .await()
 
+            // Mirror PII-free public XP fields to `/global_leaderboard/{userId}` for the Dashboard Global Leaderboard
+            try {
+                val publicName = profile.nickname.trim()
+                    .ifBlank { profile.name.trim() }
+                    .ifBlank { "Student" }
+                    .take(60)
+                val safeAvatar = profile.avatar.trim()
+                    .ifBlank { "avatar_astro_explorer" }
+                    .take(250)
+                val leaderboardPayload = hashMapOf<String, Any>(
+                    "uid" to userId,
+                    "displayName" to publicName,
+                    "standard" to profile.standard.coerceIn(1, 12),
+                    "avatar" to safeAvatar,
+                    "xp" to profile.xp.coerceIn(0, 10_000_000),
+                    "stars" to profile.stars.coerceIn(0, 1_000_000),
+                    "attendanceStreak" to profile.attendanceStreak.coerceIn(0, 10_000),
+                    "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+                )
+                db.collection(com.example.data.GlobalLeaderboardRepository.COLLECTION_GLOBAL_LEADERBOARD)
+                    .document(userId)
+                    .set(leaderboardPayload, SetOptions.merge())
+                    .await()
+            } catch (lbError: Exception) {
+                handleFirestoreError(
+                    lbError,
+                    OperationType.WRITE,
+                    "${com.example.data.GlobalLeaderboardRepository.COLLECTION_GLOBAL_LEADERBOARD}/$userId"
+                )
+            }
+
             _syncState.value = CloudSyncState.Success("Student profile backed up to Firestore (cached offline)")
             Result.success(true)
         } catch (e: Exception) {

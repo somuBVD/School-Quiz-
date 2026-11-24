@@ -103,6 +103,22 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["roomId", "roomCode", "hostUid", "participantUids", "status", "standard", "player1"]
+    },
+    "GlobalLeaderboardEntry": {
+      "title": "GlobalLeaderboardEntry",
+      "description": "PII-free public student XP ranking entry displayed on the dashboard Global Leaderboard",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "standard": { "type": "integer" },
+        "avatar": { "type": "string" },
+        "xp": { "type": "integer" },
+        "stars": { "type": "integer" },
+        "attendanceStreak": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp written via FieldValue.serverTimestamp()" }
+      },
+      "required": ["uid", "displayName", "standard", "xp", "updatedAt"]
     }
   },
   "firestore": {
@@ -125,6 +141,10 @@
     "/students/{studentId}/historical_scores/{scoreId}": {
       "schema": "QuizResult",
       "description": "Student historical quiz scores"
+    },
+    "/global_leaderboard/{studentId}": {
+      "schema": "GlobalLeaderboardEntry",
+      "description": "Public PII-free global student leaderboard ranked by total accumulated XP"
     },
     "/questions/{questionId}": {
       "schema": "Question",

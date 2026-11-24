@@ -238,3 +238,102 @@ describe('School Quiz Firestore Rules — Questions & Admin Privileges', () => {
     await assertSucceeds(studentDb.collection('questions').doc('q_math_1').get());
   });
 });
+
+describe('School Quiz Firestore Rules — Global Leaderboard (Top 10 by XP)', () => {
+  it('denies unauthenticated reads/writes, enforces ownership & schema integrity, and permits Kotlin Top-10 XP query', async () => {
+    const anonDb = dbFor(null);
+    const aliceDb = dbFor('alice_uid', { email: 'alice@school.edu', email_verified: true });
+    const bobDb = dbFor('bob_uid', { email: 'bob@school.edu', email_verified: true });
+
+    const aliceEntry = {
+      uid: 'alice_uid',
+      displayName: 'Alice Star',
+      standard: 8,
+      avatar: 'avatar_astro_explorer',
+      xp: 1850,
+      stars: 42,
+      attendanceStreak: 7,
+      updatedAt: nowTimestamp(),
+    };
+
+    const bobEntry = {
+      uid: 'bob_uid',
+      displayName: 'Bob Genius',
+      standard: 10,
+      avatar: 'avatar_math_wizard',
+      xp: 2600,
+      stars: 64,
+      attendanceStreak: 12,
+      updatedAt: nowTimestamp(),
+    };
+
+    // Unauthenticated access denied
+    await assertFails(
+      anonDb.collection('global_leaderboard')
+        .where('xp', '>=', 0)
+        .orderBy('xp', 'desc')
+        .limit(10)
+        .get()
+    );
+    await assertFails(anonDb.collection('global_leaderboard').doc('alice_uid').set(aliceEntry));
+
+    // Owner creates valid PII-free leaderboard entry (exact Kotlin payload)
+    await assertSucceeds(aliceDb.collection('global_leaderboard').doc('alice_uid').set(aliceEntry));
+    await assertSucceeds(bobDb.collection('global_leaderboard').doc('bob_uid').set(bobEntry));
+
+    // Cross-user write/update denied
+    await assertFails(
+      aliceDb.collection('global_leaderboard').doc('bob_uid').update({
+        xp: 0,
+        updatedAt: nowTimestamp(),
+      })
+    );
+
+    // Shadow/ghost field injection (PII leak attempt) denied
+    await assertFails(
+      aliceDb.collection('global_leaderboard').doc('alice_uid').set({
+        ...aliceEntry,
+        email: 'leak@school.edu',
+      })
+    );
+
+    // Negative XP, invalid standard, and tampered future timestamp denied
+    await assertFails(
+      aliceDb.collection('global_leaderboard').doc('alice_uid').update({
+        xp: -10,
+        updatedAt: nowTimestamp(),
+      })
+    );
+    await assertFails(
+      aliceDb.collection('global_leaderboard').doc('alice_uid').update({
+        xp: 1950,
+        updatedAt: new Date(Date.now() + 60000),
+      })
+    );
+
+    // Valid owner update succeeds
+    await assertSucceeds(
+      aliceDb.collection('global_leaderboard').doc('alice_uid').update({
+        xp: 2100,
+        stars: 50,
+        updatedAt: nowTimestamp(),
+      })
+    );
+
+    // Unfiltered list query without xp >= 0 constraint fails (Query Trust Test)
+    await assertFails(aliceDb.collection('global_leaderboard').get());
+
+    // Exact Kotlin repository Top-10 XP query succeeds and returns Bob (2600) ahead of Alice (2100)
+    const snap = await assertSucceeds(
+      aliceDb.collection('global_leaderboard')
+        .where('xp', '>=', 0)
+        .orderBy('xp', 'desc')
+        .limit(10)
+        .get()
+    );
+    if (snap.docs.length !== 2 || snap.docs[0].data().uid !== 'bob_uid' || snap.docs[1].data().uid !== 'alice_uid') {
+      throw new Error(`Expected ordered [bob_uid, alice_uid], got ${snap.docs.map(d => d.data().uid)}`);
+    }
+  });
+});
+

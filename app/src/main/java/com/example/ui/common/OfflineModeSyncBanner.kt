@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.auth.CloudSyncState
@@ -166,27 +167,35 @@ fun OfflineModeSyncBanner(
 
                     Spacer(modifier = Modifier.width(10.dp))
 
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = statusTitle,
                             fontSize = 12.sp,
+                            lineHeight = 15.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = if (isDark) Color.White else Color(0xFF0F172A)
+                            color = if (isDark) Color.White else Color(0xFF0F172A),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = if (isNetworkConnected) "Local Room SQLite + Firebase Synced" else "Firestore Persistence Disk Cache Active",
-                            fontSize = 10.sp,
+                            fontSize = 10.5.sp,
+                            lineHeight = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569)
+                            color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 // Sync button
                 IconButton(
                     onClick = onSyncNow,
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(44.dp)
                         .testTag("sync_now_button")
                 ) {
                     Icon(
@@ -217,6 +226,7 @@ fun OfflineModeSyncBanner(
                     Text(
                         text = "💡 Tap 'Sync Now' anytime to force synchronize local quiz scores and progress.",
                         fontSize = 10.sp,
+                        lineHeight = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = borderColor
                     )

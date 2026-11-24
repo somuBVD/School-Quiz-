@@ -95,6 +95,17 @@ service cloud.firestore {
         && (!('attendanceStreak' in data) || (data.attendanceStreak is int && data.attendanceStreak >= 0 && data.attendanceStreak <= 10000));
     }
 
+    function isValidGlobalLeaderboardEntry(data, studentId) {
+      return data.uid == studentId
+        && isNonEmptyString(data.displayName, 1, 60)
+        && data.standard is int && data.standard >= 1 && data.standard <= 12
+        && data.xp is int && data.xp >= 0 && data.xp <= 10000000
+        && (!('avatar' in data) || (data.avatar is string && data.avatar.size() <= 250))
+        && (!('stars' in data) || (data.stars is int && data.stars >= 0 && data.stars <= 1000000))
+        && (!('attendanceStreak' in data) || (data.attendanceStreak is int && data.attendanceStreak >= 0 && data.attendanceStreak <= 10000))
+        && data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
     function isValidQuestion(data) {
       return isNonEmptyString(data.id, 1, 128)
         && isNonEmptyString(data.questionText, 1, 2000)
@@ -197,6 +208,22 @@ service cloud.firestore {
       match /historical_scores/{scoreId} {
         allow read, write: if isOwner(studentId) || isAdmin();
       }
+    }
+
+    match /global_leaderboard/{studentId} {
+      allow get: if isSignedIn() && isValidId(studentId);
+      allow list: if isSignedIn() && resource.data.xp >= 0;
+      allow create: if isOwner(studentId)
+        && isValidId(studentId)
+        && incoming().keys().hasAll(['uid', 'displayName', 'standard', 'xp', 'updatedAt'])
+        && incoming().keys().hasOnly(['uid', 'displayName', 'standard', 'avatar', 'xp', 'stars', 'attendanceStreak', 'updatedAt'])
+        && isValidGlobalLeaderboardEntry(incoming(), studentId);
+      allow update: if (isOwner(studentId) || isAdmin())
+        && isValidId(studentId)
+        && isValidGlobalLeaderboardEntry(incoming(), studentId)
+        && incoming().uid == existing().uid
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'standard', 'avatar', 'xp', 'stars', 'attendanceStreak', 'updatedAt']);
+      allow delete: if isOwner(studentId) || isAdmin();
     }
 
     match /questions/{questionId} {

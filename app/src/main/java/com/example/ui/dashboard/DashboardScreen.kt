@@ -66,6 +66,8 @@ fun DashboardScreen(
     val isFirestoreOffline by viewModel.isFirestoreOffline.collectAsState()
     val isFirestorePersistenceActive by viewModel.isFirestorePersistenceActive.collectAsState()
     val isForcedOffline by viewModel.isForcedOfflineMode.collectAsState()
+    val authUiState by viewModel.authUiState.collectAsState()
+    val authUserUid = (authUiState as? com.example.auth.AuthUiState.Authenticated)?.user?.uid
     var selectedTab by remember { mutableIntStateOf(0) } // 0 = Overview, 1 = Analytics & Charts, 2 = Badges, 3 = Saved, 4 = History
     var selectedBadgeDetail by remember { mutableStateOf<Pair<BadgeDefinition, BadgeProgress>?>(null) }
     var showEditProfileDialog by remember { mutableStateOf(false) }
@@ -606,6 +608,15 @@ fun DashboardScreen(
                     isDark = isDark,
                     cardBorder = cardBorder,
                     modifier = Modifier.testTag("student_level_progression_card")
+                )
+
+                // 0.15. LIVE GLOBAL LEADERBOARD (TOP 10 STUDENTS RANKED BY TOTAL ACCUMULATED XP FROM FIRESTORE)
+                GlobalLeaderboardCard(
+                    userProfile = profile,
+                    authUserUid = authUserUid,
+                    isDark = isDark,
+                    cardBorder = cardBorder,
+                    onSignInWithGoogle = { viewModel.signInWithGoogle(context) }
                 )
 
                 // 0.2. RESPONSIVE ACTION TILES (MILESTONES & OFFLINE ROOM STORAGE)

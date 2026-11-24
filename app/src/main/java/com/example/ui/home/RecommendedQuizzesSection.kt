@@ -62,7 +62,7 @@ fun RecommendedQuizzesSection(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f, fill = false)
+                modifier = Modifier.weight(1f)
             ) {
                 Box(
                     modifier = Modifier
@@ -74,7 +74,7 @@ fun RecommendedQuizzesSection(
                     Text("💡", fontSize = 18.sp)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Column(modifier = Modifier.weight(1f, fill = false)) {
+                Column(modifier = Modifier.weight(1f)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
@@ -98,7 +98,9 @@ fun RecommendedQuizzesSection(
                                 modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF6366F1)
+                                color = Color(0xFF6366F1),
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -112,15 +114,20 @@ fun RecommendedQuizzesSection(
                 }
             }
 
+            Spacer(modifier = Modifier.width(4.dp))
+
             TextButton(
                 onClick = { showAllDialog = true },
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
                 modifier = Modifier.testTag("explore_all_recommendations_button")
             ) {
                 Text(
                     text = "See All (${recommendations.size}) →",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         }
@@ -150,14 +157,19 @@ fun RecommendedQuizzesSection(
                             text = cat.subjectTitle.split(" ").first(),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = titleColor
+                            color = titleColor,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = if (cat.attemptedUnits > 0) "${cat.averageScore}%" else "New",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = statusColor
+                            color = statusColor,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
@@ -254,6 +266,7 @@ fun RecommendationCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
+                    modifier = Modifier.weight(1f, fill = false),
                     shape = RoundedCornerShape(8.dp),
                     color = reasonColor.copy(alpha = 0.15f),
                     border = BorderStroke(1.dp, reasonColor.copy(alpha = 0.35f))
@@ -268,14 +281,18 @@ fun RecommendationCard(
                             text = recommendation.badgeLabel,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = reasonColor
+                            color = reasonColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
 
+                Spacer(modifier = Modifier.width(8.dp))
+
                 IconButton(
                     onClick = onInfoClick,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Info,
@@ -296,29 +313,16 @@ fun RecommendationCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                Text(
+                    text = "Unit ${recommendation.unitId}: ${recommendation.unitName}",
+                    fontSize = 13.sp,
+                    lineHeight = 17.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = titleColor,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Unit ${recommendation.unitId}: ",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = titleColor,
-                        maxLines = 1,
-                        softWrap = false
-                    )
-                    Text(
-                        text = recommendation.unitName,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = titleColor,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
-                }
+                )
             }
 
             // Rationale snippet
@@ -338,6 +342,9 @@ fun RecommendationCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .horizontalScroll(rememberScrollState()),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
@@ -350,6 +357,8 @@ fun RecommendationCard(
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = subtitleColor,
+                            maxLines = 1,
+                            softWrap = false,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                         )
                     }
@@ -363,23 +372,31 @@ fun RecommendationCard(
                             fontSize = 10.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = Color(0xFFD97706),
+                            maxLines = 1,
+                            softWrap = false,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(6.dp))
 
                 Button(
                     onClick = onPlay,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = subjectColor),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                    modifier = Modifier.height(32.dp).testTag("play_recommendation_btn_${recommendation.id}")
+                    modifier = Modifier
+                        .heightIn(min = 34.dp)
+                        .testTag("play_recommendation_btn_${recommendation.id}")
                 ) {
                     Text(
                         text = "Play",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.White
+                        color = Color.White,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
@@ -428,23 +445,33 @@ fun AllRecommendationsDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Text("🎯", fontSize = 22.sp)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "Personalized Recommendations",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = "${recommendations.size} suggested quizzes for your current grade",
                                 fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                lineHeight = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     IconButton(onClick = onDismiss) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
@@ -461,7 +488,15 @@ fun AllRecommendationsDialog(
                     FilterChip(
                         selected = selectedFilterReason == null,
                         onClick = { selectedFilterReason = null },
-                        label = { Text("All (${recommendations.size})", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                        label = {
+                            Text(
+                                text = "All (${recommendations.size})",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        },
                         modifier = Modifier.testTag("filter_all_recs")
                     )
 
@@ -473,9 +508,11 @@ fun AllRecommendationsDialog(
                                 onClick = { selectedFilterReason = reason },
                                 label = {
                                     Text(
-                                        "${reason.icon} ${reason.title} ($count)",
+                                        text = "${reason.icon} ${reason.title} ($count)",
                                         fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 },
                                 modifier = Modifier.testTag("filter_rec_${reason.name.lowercase()}")
@@ -528,27 +565,37 @@ fun AllRecommendationsDialog(
                                                 text = rec.badgeLabel,
                                                 fontSize = 10.sp,
                                                 fontWeight = FontWeight.ExtraBold,
-                                                color = Color(rec.reason.tagColorHex)
+                                                color = Color(rec.reason.tagColorHex),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                         }
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = rec.unitName,
                                             fontSize = 13.sp,
+                                            lineHeight = 17.sp,
                                             fontWeight = FontWeight.ExtraBold,
-                                            color = MaterialTheme.colorScheme.onSurface
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
                                             text = "${rec.subjectTitle} • ${rec.totalQuestions} Questions • ${rec.difficulty}",
                                             fontSize = 11.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            lineHeight = 15.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
                                             text = rec.rationale,
                                             fontSize = 10.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                            lineHeight = 13.sp
+                                            lineHeight = 13.sp,
+                                            maxLines = 3,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
 
@@ -562,7 +609,14 @@ fun AllRecommendationsDialog(
                                         colors = ButtonDefaults.buttonColors(containerColor = Color(rec.subjectColorHex)),
                                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                                     ) {
-                                        Text("Play", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Text(
+                                            text = "Play",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
                                     }
                                 }
                             }
@@ -598,7 +652,9 @@ fun RecommendationDetailDialog(
                 .testTag("recommendation_detail_dialog")
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
@@ -625,7 +681,9 @@ fun RecommendationDetailDialog(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = reasonColor
+                            color = reasonColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
@@ -634,13 +692,18 @@ fun RecommendationDetailDialog(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = "${item.subjectTitle} • Standard ${item.stdId}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = subjectColor
+                        color = subjectColor,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -666,7 +729,9 @@ fun RecommendationDetailDialog(
                                 text = "Why this quiz?",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                         Text(
@@ -681,19 +746,66 @@ fun RecommendationDetailDialog(
                 // Metadata Stats
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Questions", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${item.totalQuestions}", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Questions",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "${item.totalQuestions}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Difficulty", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(item.difficulty, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = subjectColor)
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Difficulty",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = item.difficulty,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = subjectColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Reward", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("+${item.xpReward} XP", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFD97706))
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Reward",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "+${item.xpReward} XP",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFFD97706),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
 
@@ -707,7 +819,11 @@ fun RecommendationDetailDialog(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp)
                     ) {
-                        Text("Later")
+                        Text(
+                            text = "Later",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
 
                     Button(
@@ -716,7 +832,12 @@ fun RecommendationDetailDialog(
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = subjectColor)
                     ) {
-                        Text("Play Now", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Play Now",
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
             }

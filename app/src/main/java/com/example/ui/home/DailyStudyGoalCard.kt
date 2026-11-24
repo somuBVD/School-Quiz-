@@ -56,7 +56,7 @@ fun DailyStudyGoalCard(
         border = cardBorder
     ) {
         Column(
-            modifier = Modifier.padding(18.dp),
+            modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
@@ -66,7 +66,7 @@ fun DailyStudyGoalCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f, fill = false)
+                    modifier = Modifier.weight(1f)
                 ) {
                     Box(
                         modifier = Modifier
@@ -75,13 +75,14 @@ fun DailyStudyGoalCard(
                             .background(Color(0xFF6366F1).copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("🎯", fontSize = 20.sp)
+                        Text("🎯", fontSize = 19.sp)
                     }
                     Spacer(modifier = Modifier.width(10.dp))
-                    Column(modifier = Modifier.weight(1f, fill = false)) {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Daily Study Target",
-                            style = MaterialTheme.typography.titleMedium,
+                            fontSize = 15.sp,
+                            lineHeight = 19.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
@@ -89,7 +90,8 @@ fun DailyStudyGoalCard(
                         )
                         Text(
                             text = "$dailyCompleted of $dailyTarget quizzes finished today",
-                            style = MaterialTheme.typography.bodySmall,
+                            fontSize = 11.5.sp,
+                            lineHeight = 15.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -97,17 +99,19 @@ fun DailyStudyGoalCard(
                     }
                 }
 
+                Spacer(modifier = Modifier.width(8.dp))
+
                 IconButton(
                     onClick = { showEditTargetDialog = true },
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(48.dp)
                         .testTag("edit_daily_goal_button")
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Edit Goal",
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -116,19 +120,26 @@ fun DailyStudyGoalCard(
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = if (isGoalMet) "Goal Completed! 🎉" else "${(rawProgress * 100).toInt()}% progress",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isGoalMet) Color(0xFF16A34A) else MaterialTheme.colorScheme.primary
+                        color = if (isGoalMet) Color(0xFF16A34A) else MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "$dailyCompleted / $dailyTarget",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
 
@@ -186,8 +197,12 @@ fun DailyStudyGoalCard(
                         Text(
                             text = "Daily Goal Claimed! Great job sticking to your study schedule.",
                             fontSize = 11.sp,
+                            lineHeight = 15.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (isDark) Color(0xFFBBF7D0) else Color(0xFF15803D)
+                            color = if (isDark) Color(0xFFBBF7D0) else Color(0xFF15803D),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
@@ -213,7 +228,11 @@ fun DailyStudyGoalCard(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("$targetValue Quizzes per day ${if (targetValue == dailyTarget) "(Current)" else ""}")
+                            Text(
+                                text = "$targetValue Quizzes per day ${if (targetValue == dailyTarget) "(Current)" else ""}",
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
                 }

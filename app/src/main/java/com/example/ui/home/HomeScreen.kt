@@ -111,14 +111,20 @@ fun HomeScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(scrollState)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.TopCenter
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 720.dp)
+                .verticalScroll(scrollState)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
         // 1. TOP PROFILE SECTION
         userProfile?.let { profile ->
             Card(
@@ -179,6 +185,7 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.width(12.dp))
 
                             Column(
+                                modifier = Modifier.weight(1f),
                                 verticalArrangement = Arrangement.Center
                             ) {
                                 Text(
@@ -191,6 +198,9 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.height(3.dp))
                                 Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
@@ -208,6 +218,9 @@ fun HomeScreen(
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
                                             color = if (isDark) Color(0xFFA5B4FC) else Color(0xFF4F46E5),
+                                            maxLines = 1,
+                                            softWrap = false,
+                                            overflow = TextOverflow.Ellipsis,
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                         )
                                     }
@@ -221,6 +234,9 @@ fun HomeScreen(
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFFEA580C),
+                                            maxLines = 1,
+                                            softWrap = false,
+                                            overflow = TextOverflow.Ellipsis,
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                         )
                                     }
@@ -252,7 +268,9 @@ fun HomeScreen(
                                     text = "${profile.coins} ${Translator.translate("coins", currentLang)}",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isDark) Color(0xFFFDE047) else Color(0xFF713F12)
+                                    color = if (isDark) Color(0xFFFDE047) else Color(0xFF713F12),
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }
@@ -272,7 +290,9 @@ fun HomeScreen(
                                     text = "${profile.stars} ${Translator.translate("stars", currentLang)}",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isDark) Color(0xFFFEF08A) else Color(0xFF713F12)
+                                    color = if (isDark) Color(0xFFFEF08A) else Color(0xFF713F12),
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }
@@ -293,7 +313,9 @@ fun HomeScreen(
                                     text = "LVL ${studentLevel.level} • ${profile.xp} XP",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isDark) Color(0xFFD8B4FE) else Color(0xFF6B21A8)
+                                    color = if (isDark) Color(0xFFD8B4FE) else Color(0xFF6B21A8),
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }
@@ -344,24 +366,26 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(
-                            modifier = Modifier.weight(1f, fill = false),
+                            modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Column {
                                 Text(
                                     text = currentAd.title,
                                     fontSize = 17.sp,
+                                    lineHeight = 21.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
-                                    maxLines = 1,
+                                    maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = currentAd.subtitle,
                                     fontSize = 12.sp,
+                                    lineHeight = 16.sp,
                                     color = Color.White.copy(alpha = 0.9f),
-                                    maxLines = 1,
+                                    maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
@@ -378,7 +402,10 @@ fun HomeScreen(
                                     text = "PLAY NOW ➔",
                                     fontSize = 10.5.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = Color.White
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -425,7 +452,7 @@ fun HomeScreen(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f, fill = false)
+                            modifier = Modifier.weight(1f)
                         ) {
                             Box(
                                 modifier = Modifier
@@ -437,7 +464,7 @@ fun HomeScreen(
                                 Text("🔥", fontSize = 18.sp)
                             }
                             Spacer(modifier = Modifier.width(8.dp))
-                            Column(modifier = Modifier.weight(1f, fill = false)) {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.fillMaxWidth()
@@ -461,6 +488,8 @@ fun HomeScreen(
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.ExtraBold,
                                             color = Color.White,
+                                            maxLines = 1,
+                                            softWrap = false,
                                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                         )
                                     }
@@ -477,6 +506,8 @@ fun HomeScreen(
                             }
                         }
 
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         Button(
                             onClick = {
                                 viewModel.claimDailyAttendanceReward()
@@ -484,9 +515,9 @@ fun HomeScreen(
                                 Toast.makeText(context, "🎉 Daily Streak Reward Claimed! +Bonus XP & Coins", Toast.LENGTH_SHORT).show()
                             },
                             modifier = Modifier
-                                .height(32.dp)
+                                .heightIn(min = 36.dp)
                                 .testTag("claim_daily_button"),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF4F46E5)
                             ),
@@ -498,7 +529,9 @@ fun HomeScreen(
                                 text = "Claim",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = Color.White,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -511,19 +544,20 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         (1..7).forEach { day ->
                             val claimed = day <= cycleStreak
                             val isDay7 = day == 7
                             Column(
+                                modifier = Modifier.weight(1f),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(34.dp)
+                                        .size(32.dp)
                                         .clip(CircleShape)
                                         .background(
                                             when {
@@ -547,6 +581,8 @@ fun HomeScreen(
                                         text = if (claimed) "🔥" else if (isDay7) "⭐" else "$day",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        softWrap = false,
                                         color = when {
                                             claimed -> if (isDark) Color(0xFFFECDD3) else Color(0xFFBE123C)
                                             isDay7 -> if (isDark) Color(0xFFFDE68A) else Color(0xFFB45309)
@@ -558,7 +594,10 @@ fun HomeScreen(
                                     text = if (isDay7) "Day 7" else "D$day",
                                     fontSize = 9.sp,
                                     fontWeight = if (claimed || isDay7) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (claimed) (if (isDark) Color(0xFFFDA4AF) else Color(0xFFE11D48)) else subtitleColor
+                                    color = if (claimed) (if (isDark) Color(0xFFFDA4AF) else Color(0xFFE11D48)) else subtitleColor,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -631,6 +670,8 @@ fun HomeScreen(
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = Color.White,
+                                    maxLines = 1,
+                                    softWrap = false,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                 )
                             }
@@ -638,6 +679,7 @@ fun HomeScreen(
                         Text(
                             text = Translator.translate("daily_challenge", currentLang),
                             fontSize = 12.5.sp,
+                            lineHeight = 16.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = if (isDark) Color(0xFFE0E7FF) else Color(0xFF1E1B4B),
                             maxLines = 1,
@@ -646,6 +688,7 @@ fun HomeScreen(
                         Text(
                             text = "Daily Challenge",
                             fontSize = 10.5.sp,
+                            lineHeight = 14.sp,
                             color = if (isDark) Color(0xFFA5B4FC) else Color(0xFF4F46E5),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -684,6 +727,8 @@ fun HomeScreen(
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = Color.White,
+                                    maxLines = 1,
+                                    softWrap = false,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                 )
                             }
@@ -691,6 +736,7 @@ fun HomeScreen(
                         Text(
                             text = "1 vs 1 Battle",
                             fontSize = 12.5.sp,
+                            lineHeight = 16.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = if (isDark) Color(0xFFF5D0FE) else Color(0xFF701A75),
                             maxLines = 1,
@@ -699,6 +745,7 @@ fun HomeScreen(
                         Text(
                             text = "Duel classmates",
                             fontSize = 10.5.sp,
+                            lineHeight = 14.sp,
                             color = if (isDark) Color(0xFFE879F9) else Color(0xFF9333EA),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -743,6 +790,8 @@ fun HomeScreen(
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = Color.White,
+                                    maxLines = 1,
+                                    softWrap = false,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                 )
                             }
@@ -750,6 +799,7 @@ fun HomeScreen(
                         Text(
                             text = "60s Quiz Blitz",
                             fontSize = 12.5.sp,
+                            lineHeight = 16.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = if (isDark) Color(0xFFFFE4E6) else Color(0xFF881337),
                             maxLines = 1,
@@ -758,6 +808,7 @@ fun HomeScreen(
                         Text(
                             text = "+3s speed sprint",
                             fontSize = 10.5.sp,
+                            lineHeight = 14.sp,
                             color = if (isDark) Color(0xFFFDA4AF) else Color(0xFF9F1239),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -796,6 +847,8 @@ fun HomeScreen(
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = Color.White,
+                                    maxLines = 1,
+                                    softWrap = false,
                                     modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                 )
                             }
@@ -803,6 +856,7 @@ fun HomeScreen(
                         Text(
                             text = "Mistake Vault",
                             fontSize = 12.5.sp,
+                            lineHeight = 16.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = if (isDark) Color(0xFFFCA5A5) else Color(0xFF7F1D1D),
                             maxLines = 1,
@@ -811,6 +865,7 @@ fun HomeScreen(
                         Text(
                             text = if (mistakes.isEmpty()) "0 mistakes 🌟" else "${mistakes.size} to review",
                             fontSize = 10.5.sp,
+                            lineHeight = 14.sp,
                             color = if (isDark) Color(0xFFFECDD3) else Color(0xFF991B1B),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -855,6 +910,8 @@ fun HomeScreen(
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = Color.White,
+                                    maxLines = 1,
+                                    softWrap = false,
                                     modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                 )
                             }
@@ -862,6 +919,7 @@ fun HomeScreen(
                         Text(
                             text = "Formula Vault",
                             fontSize = 12.5.sp,
+                            lineHeight = 16.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = if (isDark) Color(0xFFE0F2FE) else Color(0xFF0369A1),
                             maxLines = 1,
@@ -870,6 +928,7 @@ fun HomeScreen(
                         Text(
                             text = "ಸೂತ್ರಗಳು & Laws",
                             fontSize = 10.5.sp,
+                            lineHeight = 14.sp,
                             color = if (isDark) Color(0xFF7DD3FC) else Color(0xFF0284C7),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -908,6 +967,8 @@ fun HomeScreen(
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = Color.White,
+                                    maxLines = 1,
+                                    softWrap = false,
                                     modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                 )
                             }
@@ -915,6 +976,7 @@ fun HomeScreen(
                         Text(
                             text = "Focus Timer",
                             fontSize = 12.5.sp,
+                            lineHeight = 16.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = if (isDark) Color(0xFFF3E8FF) else Color(0xFF581C87),
                             maxLines = 1,
@@ -923,6 +985,7 @@ fun HomeScreen(
                         Text(
                             text = "Pomodoro Study",
                             fontSize = 10.5.sp,
+                            lineHeight = 14.sp,
                             color = if (isDark) Color(0xFFC4B5FD) else Color(0xFF7C3AED),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -944,7 +1007,9 @@ fun HomeScreen(
                 border = BorderStroke(1.dp, if (isDark) Color(0xFF4338CA) else Color(0xFFC7D2FE))
             ) {
                 Row(
-                    modifier = Modifier.padding(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -962,13 +1027,20 @@ fun HomeScreen(
                             Text("📝", fontSize = 20.sp)
                         }
                         Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
                                 Text(
                                     text = "Board Mock Exam Simulator",
                                     fontSize = 13.5.sp,
+                                    lineHeight = 17.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = if (isDark) Color(0xFFE0E7FF) else Color(0xFF1E1B4B)
+                                    color = if (isDark) Color(0xFFE0E7FF) else Color(0xFF1E1B4B),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Surface(
@@ -980,19 +1052,29 @@ fun HomeScreen(
                                         fontSize = 8.5.sp,
                                         fontWeight = FontWeight.Black,
                                         color = Color.White,
+                                        maxLines = 1,
+                                        softWrap = false,
                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                     )
                                 }
                             }
+                            val mockStdLabel = when (selectedStd) {
+                                11 -> "Morarji"
+                                12 -> "NMMS"
+                                else -> "Std $selectedStd"
+                            }
                             Text(
-                                text = "Std $selectedStd • 20 questions, countdown palette & diagnostic report card",
+                                text = "$mockStdLabel • 20 questions, countdown palette & diagnostic report card",
                                 fontSize = 10.5.sp,
+                                lineHeight = 14.sp,
                                 color = if (isDark) Color(0xFFA5B4FC) else Color(0xFF4F46E5),
-                                maxLines = 1,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     Button(
                         onClick = { viewModel.startMockExam(selectedStd) },
@@ -1000,7 +1082,14 @@ fun HomeScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                     ) {
-                        Text("Start Test", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(
+                            text = "Start Test",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
                 }
             }
@@ -1076,12 +1165,15 @@ fun HomeScreen(
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Offline Quizzes (Room)",
                             fontSize = 13.sp,
+                            lineHeight = 17.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = if (isDark) Color(0xFFA7F3D0) else Color(0xFF065F46)
+                            color = if (isDark) Color(0xFFA7F3D0) else Color(0xFF065F46),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Spacer(modifier = Modifier.height(3.dp))
                         Surface(
@@ -1093,6 +1185,8 @@ fun HomeScreen(
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White,
+                                maxLines = 1,
+                                softWrap = false,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
@@ -1101,10 +1195,15 @@ fun HomeScreen(
                             text = if (downloadedQuizzes.isEmpty()) "Tap 📥 next to any quiz or subject to download for 100% offline study"
                                    else "${downloadedQuizzes.sumOf { it.questionCount }} questions saved locally • Tap to manage",
                             fontSize = 12.sp,
-                            color = if (isDark) Color(0xFF6EE7B7) else Color(0xFF047857)
+                            lineHeight = 16.sp,
+                            color = if (isDark) Color(0xFF6EE7B7) else Color(0xFF047857),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 FilledTonalButton(
                     onClick = { showOfflineManagerDialog = true },
@@ -1119,7 +1218,9 @@ fun HomeScreen(
                     Text(
                         text = "Manage 💾",
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
@@ -1135,7 +1236,15 @@ fun HomeScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text(Translator.translate("search_hint", currentLang), fontSize = 13.sp, color = subtitleColor) },
+                placeholder = {
+                    Text(
+                        text = Translator.translate("search_hint", currentLang),
+                        fontSize = 13.sp,
+                        color = subtitleColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = subtitleColor) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
@@ -1193,7 +1302,14 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Suggestions:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = subtitleColor)
+                    Text(
+                        text = "Suggestions:",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = subtitleColor,
+                        maxLines = 1,
+                        softWrap = false
+                    )
                     predictiveSuggestions.forEachIndexed { idx, (type, label, queryVal) ->
                         SuggestionChip(
                             onClick = {
@@ -1208,7 +1324,10 @@ fun HomeScreen(
                                 Text(
                                     text = "$label ($type)",
                                     fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.widthIn(max = 220.dp)
                                 )
                             },
                             shape = RoundedCornerShape(12.dp),
@@ -1236,6 +1355,8 @@ fun HomeScreen(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = subtitleColor,
+                    maxLines = 1,
+                    softWrap = false,
                     modifier = Modifier.padding(end = 4.dp)
                 )
 
@@ -1257,7 +1378,9 @@ fun HomeScreen(
                             Text(
                                 text = standardTemplate.name,
                                 fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         },
                         colors = FilterChipDefaults.filterChipColors(
@@ -1282,6 +1405,8 @@ fun HomeScreen(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = subtitleColor,
+                    maxLines = 1,
+                    softWrap = false,
                     modifier = Modifier.padding(end = 4.dp)
                 )
 
@@ -1319,7 +1444,15 @@ fun HomeScreen(
                     FilterChip(
                         selected = isSelected,
                         onClick = { viewModel.setSubjectFilter(subId) },
-                        label = { Text(label, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                        label = {
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = Color(0xFF4F46E5),
                             selectedLabelColor = Color.White
@@ -1342,6 +1475,8 @@ fun HomeScreen(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = subtitleColor,
+                    maxLines = 1,
+                    softWrap = false,
                     modifier = Modifier.padding(end = 4.dp)
                 )
 
@@ -1357,7 +1492,15 @@ fun HomeScreen(
                     FilterChip(
                         selected = isSelected,
                         onClick = { selectedDifficulty = diffKey },
-                        label = { Text(label, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                        label = {
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = when (diffKey) {
                                 "easy" -> Color(0xFF10B981)
@@ -1387,7 +1530,9 @@ fun HomeScreen(
                             Text(
                                 text = "💾 Offline Ready (${downloadedQuizzes.size})",
                                 fontSize = 11.sp,
-                                fontWeight = if (showOfflineOnly) FontWeight.Bold else FontWeight.Normal
+                                fontWeight = if (showOfflineOnly) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     },
@@ -1408,7 +1553,13 @@ fun HomeScreen(
                         },
                         modifier = Modifier.testTag("clear_all_filters_button")
                     ) {
-                        Text("Reset Filters ✕", fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
+                        Text(
+                            text = "Reset Filters ✕",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.error,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
                 }
             }
@@ -1433,7 +1584,9 @@ fun HomeScreen(
                 text = "${Translator.translate("subjects", currentLang)} ($selectedStdName)",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold,
-                color = titleColor
+                color = titleColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
 
             // Locate subjects configured for current selected standard
@@ -1486,7 +1639,8 @@ fun HomeScreen(
                             text = if (showOfflineOnly) "No Offline Quizzes Here" else "No Quizzes Found",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.ExtraBold,
-                            color = titleColor
+                            color = titleColor,
+                            textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
@@ -1511,7 +1665,12 @@ fun HomeScreen(
                         ) {
                             Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Clear Filters & Show All", fontWeight = FontWeight.Bold)
+                            Text(
+                                text = "Clear Filters & Show All",
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
                 }
@@ -1580,18 +1739,23 @@ fun HomeScreen(
                                     Text(
                                         text = subject.title,
                                         style = MaterialTheme.typography.titleMedium,
+                                        lineHeight = 20.sp,
                                         fontWeight = FontWeight.ExtraBold,
-                                        color = titleColor
+                                        color = titleColor,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Row(
+                                        modifier = Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         LinearProgressIndicator(
                                             progress = { avgSubjPercentage / 100f },
                                             modifier = Modifier
-                                                .width(96.dp)
+                                                .weight(1f, fill = false)
+                                                .widthIn(min = 48.dp, max = 110.dp)
                                                 .height(6.dp)
                                                 .clip(RoundedCornerShape(3.dp)),
                                             color = color,
@@ -1601,10 +1765,14 @@ fun HomeScreen(
                                             text = "$avgSubjPercentage%",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.ExtraBold,
-                                            color = color
+                                            color = color,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                     }
                                 }
+
+                                Spacer(modifier = Modifier.width(8.dp))
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
@@ -1612,6 +1780,8 @@ fun HomeScreen(
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = subtitleColor,
+                                        maxLines = 1,
+                                        softWrap = false,
                                         modifier = Modifier.padding(end = 4.dp)
                                     )
                                     Icon(
@@ -1659,8 +1829,12 @@ fun HomeScreen(
                                                    else "💾 $downloadedInSubject of ${subject.units.size} offline (Room DB)",
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (downloadedInSubject > 0) Color(0xFF10B981) else subtitleColor
+                                            color = if (downloadedInSubject > 0) Color(0xFF10B981) else subtitleColor,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f)
                                         )
+                                        Spacer(modifier = Modifier.width(8.dp))
                                         TextButton(
                                             onClick = {
                                                 viewModel.downloadAllQuizzesForSubject(selectedStd, subject.id) { total ->
@@ -1681,7 +1855,9 @@ fun HomeScreen(
                                                 text = "Download All",
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = color
+                                                color = color,
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         }
                                     }
@@ -1717,6 +1893,7 @@ fun HomeScreen(
                                                     text = "${Translator.translate("unit", currentLang)} ${unit.id}: ${unit.name}",
                                                     fontWeight = FontWeight.ExtraBold,
                                                     fontSize = 14.5.sp,
+                                                    lineHeight = 19.sp,
                                                     color = titleColor,
                                                     maxLines = 2,
                                                     overflow = TextOverflow.Ellipsis,
@@ -1725,8 +1902,7 @@ fun HomeScreen(
 
                                                 Spacer(modifier = Modifier.height(10.dp))
 
-                                                // 2. Metadata & Action Buttons Row (Optimized for Mobile)
-                                                // 2. Metadata & Action Buttons Row (Small equal size in a single horizontal line, perfectly aligned with no overflow)
+                                                // 2. Metadata & Action Buttons Row (Adaptive min-height pills prevent clipping on scaled fonts)
                                                 Row(
                                                     modifier = Modifier.fillMaxWidth(),
                                                     verticalAlignment = Alignment.CenterVertically,
@@ -1750,10 +1926,11 @@ fun HomeScreen(
                                                     Box(
                                                         modifier = Modifier
                                                             .weight(1f)
-                                                            .height(30.dp)
+                                                            .heightIn(min = 34.dp)
                                                             .clip(RoundedCornerShape(8.dp))
                                                             .background(difficultyColor.copy(alpha = 0.12f))
-                                                            .border(BorderStroke(0.8.dp, difficultyColor.copy(alpha = 0.35f)), RoundedCornerShape(8.dp)),
+                                                            .border(BorderStroke(0.8.dp, difficultyColor.copy(alpha = 0.35f)), RoundedCornerShape(8.dp))
+                                                            .padding(horizontal = 4.dp, vertical = 4.dp),
                                                         contentAlignment = Alignment.Center
                                                     ) {
                                                         Text(
@@ -1762,6 +1939,7 @@ fun HomeScreen(
                                                             fontWeight = FontWeight.Bold,
                                                             color = difficultyColor,
                                                             maxLines = 1,
+                                                            softWrap = false,
                                                             overflow = TextOverflow.Ellipsis
                                                         )
                                                     }
@@ -1770,10 +1948,11 @@ fun HomeScreen(
                                                     Box(
                                                         modifier = Modifier
                                                             .weight(1f)
-                                                            .height(30.dp)
+                                                            .heightIn(min = 34.dp)
                                                             .clip(RoundedCornerShape(8.dp))
                                                             .background(if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9))
-                                                            .border(BorderStroke(0.8.dp, if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)), RoundedCornerShape(8.dp)),
+                                                            .border(BorderStroke(0.8.dp, if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)), RoundedCornerShape(8.dp))
+                                                            .padding(horizontal = 4.dp, vertical = 4.dp),
                                                         contentAlignment = Alignment.Center
                                                     ) {
                                                         Text(
@@ -1782,6 +1961,7 @@ fun HomeScreen(
                                                             fontWeight = FontWeight.SemiBold,
                                                             color = subtitleColor,
                                                             maxLines = 1,
+                                                            softWrap = false,
                                                             overflow = TextOverflow.Ellipsis
                                                         )
                                                     }
@@ -1790,7 +1970,7 @@ fun HomeScreen(
                                                     Box(
                                                         modifier = Modifier
                                                             .weight(1f)
-                                                            .height(30.dp)
+                                                            .heightIn(min = 34.dp)
                                                             .clip(RoundedCornerShape(8.dp))
                                                             .background(
                                                                 if (isUnitDownloaded) Color(0xFF10B981).copy(alpha = 0.15f)
@@ -1850,7 +2030,7 @@ fun HomeScreen(
                                                     Box(
                                                         modifier = Modifier
                                                             .weight(1f)
-                                                            .height(30.dp)
+                                                            .heightIn(min = 34.dp)
                                                             .clip(RoundedCornerShape(8.dp))
                                                             .background(color.copy(alpha = 0.12f))
                                                             .border(BorderStroke(0.8.dp, color.copy(alpha = 0.35f)), RoundedCornerShape(8.dp))
@@ -1867,7 +2047,7 @@ fun HomeScreen(
                                                     Box(
                                                         modifier = Modifier
                                                             .weight(1f)
-                                                            .height(30.dp)
+                                                            .heightIn(min = 34.dp)
                                                             .clip(RoundedCornerShape(8.dp))
                                                             .background(color)
                                                             .clickable {
@@ -1917,6 +2097,7 @@ fun HomeScreen(
                     }
                 }
             }
+        }
         }
     }
 

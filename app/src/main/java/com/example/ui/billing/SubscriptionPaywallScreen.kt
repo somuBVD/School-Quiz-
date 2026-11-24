@@ -59,6 +59,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.billing.SubscriptionAccessState
@@ -125,29 +126,38 @@ fun SubscriptionTrialBanner(
                             )
                         }
                         Spacer(modifier = Modifier.width(10.dp))
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "School Quiz Monthly Pass Active",
-                                style = MaterialTheme.typography.labelLarge,
+                                fontSize = 13.sp,
+                                lineHeight = 17.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = "${access.formattedPrice} • Unlimited access unlocked",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
+                    Spacer(modifier = Modifier.width(8.dp))
                     Surface(
                         shape = RoundedCornerShape(10.dp),
                         color = MaterialTheme.colorScheme.secondary
                     ) {
                         Text(
                             text = "MANAGE",
-                            style = MaterialTheme.typography.labelSmall,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onSecondary,
+                            maxLines = 1,
+                            softWrap = false,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                         )
                     }
@@ -204,18 +214,24 @@ fun SubscriptionTrialBanner(
                                 modifier = Modifier.size(22.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 val daysLabel = if (access.daysRemaining == 1) "1 day left" else "${access.daysRemaining} days left"
                                 Text(
                                     text = "7-Day Free Trial • $daysLabel",
-                                    style = MaterialTheme.typography.labelLarge,
+                                    fontSize = 13.sp,
+                                    lineHeight = 17.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = contentColor
+                                    color = contentColor,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = "Then ${access.formattedPrice} • Cancel anytime on Google Play",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = contentColor.copy(alpha = 0.85f)
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    color = contentColor.copy(alpha = 0.85f),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -226,9 +242,11 @@ fun SubscriptionTrialBanner(
                         ) {
                             Text(
                                 text = "₹20/MO",
-                                style = MaterialTheme.typography.labelSmall,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White,
+                                maxLines = 1,
+                                softWrap = false,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                             )
                         }
@@ -276,20 +294,25 @@ fun SubscriptionTrialBanner(
                             modifier = Modifier.size(22.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "7-Day Free Trial Ended",
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.onErrorContainer
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = "Subscribe for ${access.formattedPrice} to continue learning",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f)
+                                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
+                    Spacer(modifier = Modifier.width(8.dp))
                     Surface(
                         shape = RoundedCornerShape(10.dp),
                         color = MaterialTheme.colorScheme.error
@@ -299,6 +322,8 @@ fun SubscriptionTrialBanner(
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onError,
+                            maxLines = 1,
+                            softWrap = false,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                         )
                     }

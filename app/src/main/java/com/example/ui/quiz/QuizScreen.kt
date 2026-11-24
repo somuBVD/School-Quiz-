@@ -1951,7 +1951,7 @@ fun QuizResultsView(
                     accuracyPercentage = accuracy,
                     completedAt = System.currentTimeMillis()
                 ),
-                isDark = false,
+                isDark = MaterialTheme.colorScheme.background.red < 0.25f,
                 onDismiss = { showCertificateDialog = false }
             )
         }
