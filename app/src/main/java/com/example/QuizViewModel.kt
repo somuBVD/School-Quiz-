@@ -273,6 +273,7 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     val battleArenaState: StateFlow<BattleArenaState> = _battleArenaState.asStateFlow()
     private var battleTimerJob: Job? = null
     private var opponentResponseJob: Job? = null
+    private var battleAdvanceJob: Job? = null
     private var onlineMatchmakingTimerJob: Job? = null
 
     // --- 60-Second Quiz Blitz State ---
@@ -361,6 +362,20 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     val quizDataSyncService = com.example.sync.QuizDataSyncService.getInstance(application)
     val firestoreSyncStatus: StateFlow<com.example.sync.SyncStatus> = quizDataSyncService.syncStatus
     val lastFirestoreSyncTime: StateFlow<Long> = quizDataSyncService.lastSyncTimestamp
+
+    // --- KPSC Study Materials & Offline Room Indexing Sync Service (WorkManager + Firestore) ---
+    val kpscContentSyncService = com.example.sync.KpscContentSyncService.getInstance(application)
+    val kpscStudyMaterials: StateFlow<List<KpscStudyMaterialEntity>> = repository.allKpscStudyMaterials
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val kpscSyncedQuestionCount: StateFlow<Int> = repository.kpscSyncedQuestionCount
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val kpscSyncStatus: StateFlow<com.example.sync.KpscSyncStatus> = kpscContentSyncService.syncStatus
+    val kpscLastSyncedAt: StateFlow<Long> = kpscContentSyncService.lastSyncTimestamp
+
+    fun triggerKpscContentSync() {
+        kpscContentSyncService.triggerBackgroundSync()
+        com.example.sync.KpscContentSyncWorker.enqueueImmediate(getApplication())
+    }
 
     // --- Bookmarked / Saved Questions backed by Room Database ---
     val bookmarkedQuestions: StateFlow<List<QuestionModel>> = repository.bookmarkedQuestions
@@ -466,6 +481,8 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
         try {
             com.example.sync.QuizDataSyncWorker.schedulePeriodic(application)
             quizDataSyncService.triggerAutoSync()
+            com.example.sync.KpscContentSyncWorker.schedulePeriodic(application)
+            kpscContentSyncService.triggerBackgroundSync()
         } catch (ignored: Exception) {}
 
         // Upload and verify 6th Standard unitwise Kannada questions in Firestore
@@ -2071,7 +2088,7 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
             standard = 6,
             winRate = 78,
             accuracy = 0.80f,
-            responseSpeedRangeMs = 2800L..5500L
+            responseSpeedRangeMs = 900L..2200L
         ),
         BattleOpponent(
             id = "opp_2",
@@ -2081,7 +2098,7 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
             standard = 7,
             winRate = 84,
             accuracy = 0.85f,
-            responseSpeedRangeMs = 3200L..6200L
+            responseSpeedRangeMs = 1000L..2500L
         ),
         BattleOpponent(
             id = "opp_3",
@@ -2091,7 +2108,7 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
             standard = 8,
             winRate = 72,
             accuracy = 0.75f,
-            responseSpeedRangeMs = 3500L..7000L
+            responseSpeedRangeMs = 1100L..2600L
         ),
         BattleOpponent(
             id = "opp_4",
@@ -2101,7 +2118,7 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
             standard = 9,
             winRate = 90,
             accuracy = 0.90f,
-            responseSpeedRangeMs = 2200L..4800L
+            responseSpeedRangeMs = 800L..2000L
         ),
         BattleOpponent(
             id = "opp_5",
@@ -2111,13 +2128,49 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
             standard = 10,
             winRate = 80,
             accuracy = 0.82f,
-            responseSpeedRangeMs = 2600L..5800L
+            responseSpeedRangeMs = 900L..2400L
         )
     )
+
+    private suspend fun loadMaxBattleMcqQuestions(std: Int, subjectFilter: String): List<QuestionModel> {
+        val subjects = QuizStaticData.standardsList.find { it.std == std }?.subjects ?: emptyList()
+        val rawPool = mutableListOf<QuestionModel>()
+        for (subj in subjects) {
+            if (subjectFilter == "mixed" || subj.id.equals(subjectFilter, ignoreCase = true)) {
+                for (u in subj.units) {
+                    rawPool.addAll(repository.getQuestionsForUnit(std, subj.id, u.id))
+                }
+            }
+        }
+        if (rawPool.isEmpty()) {
+            if (subjectFilter == "mental_ability") {
+                rawPool.addAll(com.example.data.MentalAbilityData.asQuestionModels)
+            } else if (subjectFilter == "mixed") {
+                rawPool.addAll(QuizStaticData.getQuestionsForStandard(std))
+            } else {
+                rawPool.addAll(QuizStaticData.getQuestionsForSubject(std, subjectFilter))
+            }
+        }
+        if (rawPool.isEmpty()) {
+            rawPool.addAll(QuizStaticData.getQuestionsForStandard(std))
+        }
+        if (rawPool.isEmpty()) {
+            rawPool.addAll(QuizStaticData.coreStaticQuestions)
+        }
+
+        val mcqOnly = rawPool.filter { q ->
+            q.type.equals("MCQ", ignoreCase = true) && q.options.size >= 2
+        }
+        val finalPool = if (mcqOnly.isNotEmpty()) mcqOnly else rawPool.filter { it.options.size >= 2 }
+        return finalPool
+            .distinctBy { it.questionText.trim().lowercase() }
+            .shuffled()
+    }
 
     fun startBattleArena() {
         battleTimerJob?.cancel()
         opponentResponseJob?.cancel()
+        battleAdvanceJob?.cancel()
         _battleArenaState.value = BattleArenaState(
             isActive = true,
             stage = BattleStage.LOBBY
@@ -2157,28 +2210,8 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
             val std = _selectedStd.value
             val subjectFilter = _battleArenaState.value.selectedSubject
 
-            // Candidate questions from real curriculum
-            val subjects = QuizStaticData.standardsList.find { it.std == std }?.subjects ?: emptyList()
-            val candidateQuestions = mutableListOf<QuestionModel>()
-            for (subj in subjects) {
-                if (subjectFilter == "mixed" || subj.id.equals(subjectFilter, ignoreCase = true)) {
-                    for (u in subj.units) {
-                        candidateQuestions.addAll(repository.getQuestionsForUnit(std, subj.id, u.id))
-                    }
-                }
-            }
-            if (candidateQuestions.isEmpty()) {
-                if (subjectFilter == "mental_ability") {
-                    candidateQuestions.addAll(com.example.data.MentalAbilityData.asQuestionModels)
-                } else {
-                    val staticMatching = QuizStaticData.getQuestionsForSubject(std, subjectFilter)
-                    if (staticMatching.isNotEmpty()) {
-                        candidateQuestions.addAll(staticMatching)
-                    } else {
-                        candidateQuestions.addAll(QuizStaticData.coreStaticQuestions)
-                    }
-                }
-            }
+            // Load maximum unique MCQ questions from curriculum
+            val candidateQuestions = loadMaxBattleMcqQuestions(std, subjectFilter)
 
             if (!onlineBattleManager.isAuthenticatedForOnlineBattle()) {
                 onlineMatchmakingTimerJob?.cancel()
@@ -2258,21 +2291,7 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
             val std = _selectedStd.value
             val subjectFilter = _battleArenaState.value.selectedSubject
 
-            val subjects = QuizStaticData.standardsList.find { it.std == std }?.subjects ?: emptyList()
-            val candidateQuestions = mutableListOf<QuestionModel>()
-            for (subj in subjects) {
-                if (subjectFilter == "mixed" || subj.id.equals(subjectFilter, ignoreCase = true)) {
-                    for (u in subj.units) {
-                        candidateQuestions.addAll(repository.getQuestionsForUnit(std, subj.id, u.id))
-                    }
-                }
-            }
-            if (candidateQuestions.isEmpty()) {
-                candidateQuestions.addAll(
-                    QuizStaticData.getQuestionsForSubject(std, subjectFilter)
-                        .ifEmpty { QuizStaticData.coreStaticQuestions }
-                )
-            }
+            val candidateQuestions = loadMaxBattleMcqQuestions(std, subjectFilter)
 
             val createResult = onlineBattleManager.createPrivateRoom(profile, subjectFilter, candidateQuestions)
             createResult.onSuccess { (roomId, code) ->
@@ -2351,7 +2370,7 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
                     userScore = myPlayer?.score ?: currState.userScore,
                     opponentScore = oppPlayer?.score ?: currState.opponentScore,
                     opponentAnswerLocked = oppPlayer?.currentAnswer?.isNotEmpty() == true,
-                    statusMessage = "Battle Active • Round ${room.currentRound + 1} of 5"
+                    statusMessage = "Speed Battle • Round ${room.currentRound + 1} of ${questionsList.size}"
                 )
 
                 if (isRoundChanged) {
@@ -2406,12 +2425,14 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
                     statusMessage = "Round ${room.currentRound + 1} Result Revealed"
                 )
 
-                // Host advances round after 2.4 seconds
+                // Host advances round quickly (speedy 400ms visual reveal)
                 if (isHost) {
-                    viewModelScope.launch {
-                        delay(2400)
+                    battleAdvanceJob?.cancel()
+                    battleAdvanceJob = viewModelScope.launch {
+                        delay(400)
+                        val totalRoundsInRoom = room.questions.size.coerceAtLeast(1)
                         val nextRound = room.currentRound + 1
-                        val isOver = nextRound >= 5
+                        val isOver = nextRound >= totalRoundsInRoom
                         val winnerUid = if (isOver) {
                             val p1Sc = myPlayer?.score ?: 0
                             val p2Sc = oppPlayer?.score ?: 0
@@ -2461,7 +2482,7 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     private fun startOnlineBattleRoundTimer() {
         battleTimerJob?.cancel()
         _battleArenaState.value = _battleArenaState.value.copy(
-            roundSecondsRemaining = 15,
+            roundSecondsRemaining = 10,
             userSelectedAnswer = "",
             opponentSelectedAnswer = "",
             opponentAnswerLocked = false
@@ -2535,29 +2556,21 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     fun startAiBattleChallenger(candidateQuestionsList: List<QuestionModel>? = null) {
         battleTimerJob?.cancel()
         opponentResponseJob?.cancel()
+        battleAdvanceJob?.cancel()
         onlineMatchmakingTimerJob?.cancel()
         onlineBattleManager.detachListener()
 
         viewModelScope.launch {
             val std = _selectedStd.value
             val subjectFilter = _battleArenaState.value.selectedSubject
-            val candidateQuestions = candidateQuestionsList ?: run {
-                val subjects = QuizStaticData.standardsList.find { it.std == std }?.subjects ?: emptyList()
-                val list = mutableListOf<QuestionModel>()
-                for (subj in subjects) {
-                    if (subjectFilter == "mixed" || subj.id.equals(subjectFilter, ignoreCase = true)) {
-                        for (u in subj.units) {
-                            list.addAll(repository.getQuestionsForUnit(std, subj.id, u.id))
-                        }
-                    }
-                }
-                if (list.isEmpty()) {
-                    QuizStaticData.getQuestionsForSubject(std, subjectFilter)
-                        .ifEmpty { QuizStaticData.coreStaticQuestions }
-                } else list
+            val battleQuestions = if (candidateQuestionsList != null) {
+                candidateQuestionsList
+                    .filter { it.options.size >= 2 }
+                    .distinctBy { it.questionText.trim().lowercase() }
+                    .shuffled()
+            } else {
+                loadMaxBattleMcqQuestions(std, subjectFilter)
             }
-
-            val battleQuestions = candidateQuestions.shuffled().take(5)
             val matchedOpponent = sampleOpponents.shuffled().first()
 
             _battleArenaState.value = _battleArenaState.value.copy(
@@ -2568,12 +2581,15 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
                 opponent = matchedOpponent,
                 questions = battleQuestions,
                 currentRoundIndex = 0,
+                roundSecondsRemaining = 10,
                 userScore = 0,
                 opponentScore = 0,
+                userStreak = 0,
+                opponentStreak = 0,
                 userSelectedAnswer = "",
                 opponentSelectedAnswer = "",
                 roundResults = emptyList(),
-                statusMessage = "Challenging ${matchedOpponent.name} (${matchedOpponent.school})"
+                statusMessage = "Speed Battle (${battleQuestions.size} MCQs) vs ${matchedOpponent.name}"
             )
 
             startLocalBattleRound()
@@ -2583,10 +2599,11 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     private fun startLocalBattleRound() {
         battleTimerJob?.cancel()
         opponentResponseJob?.cancel()
+        battleAdvanceJob?.cancel()
 
         _battleArenaState.value = _battleArenaState.value.copy(
             stage = BattleStage.IN_PROGRESS,
-            roundSecondsRemaining = 15,
+            roundSecondsRemaining = 10,
             userSelectedAnswer = "",
             opponentSelectedAnswer = ""
         )
@@ -2650,35 +2667,41 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
                 )
             }
         } else {
-            // Local bot opponent
-            if (curr.opponentSelectedAnswer.isNotEmpty()) {
-                evaluateLocalBattleRound()
-            }
+            // Zero-delay speedy local battle: evaluate immediately on user tap without waiting for AI
+            evaluateLocalBattleRound()
         }
     }
 
     private fun evaluateLocalBattleRound() {
         battleTimerJob?.cancel()
         opponentResponseJob?.cancel()
+        battleAdvanceJob?.cancel()
 
         val curr = _battleArenaState.value
+        if (curr.stage != BattleStage.IN_PROGRESS) return
         val question = curr.currentQuestion ?: return
 
         val userAns = curr.userSelectedAnswer
         var oppAns = curr.opponentSelectedAnswer
         if (oppAns.isEmpty()) {
             val willBeCorrect = Math.random() < (curr.opponent?.accuracy ?: 0.75f)
-            oppAns = if (willBeCorrect) question.correctAnswer else question.options.random()
+            oppAns = if (willBeCorrect) {
+                question.correctAnswer
+            } else {
+                question.options.filter { !it.equals(question.correctAnswer, ignoreCase = true) }.randomOrNull() ?: question.correctAnswer
+            }
         }
 
         val userCorrect = userAns.trim().equals(question.correctAnswer.trim(), ignoreCase = true)
         val oppCorrect = oppAns.trim().equals(question.correctAnswer.trim(), ignoreCase = true)
 
-        val userPts = if (userCorrect) 10 + (if (curr.roundSecondsRemaining >= 8) 10 else 5) else 0
-        val oppPts = if (oppCorrect) 10 + (if (curr.roundSecondsRemaining >= 5) 10 else 5) else 0
+        val userPts = if (userCorrect) 10 + (if (curr.roundSecondsRemaining >= 6) 10 else 5) else 0
+        val oppPts = if (oppCorrect) 10 + (if (curr.roundSecondsRemaining >= 4) 10 else 5) else 0
 
         val newUserScore = curr.userScore + userPts
         val newOppScore = curr.opponentScore + oppPts
+        val newUserStreak = if (userCorrect) curr.userStreak + 1 else 0
+        val newOppStreak = if (oppCorrect) curr.opponentStreak + 1 else 0
 
         val roundResult = BattleRoundResult(
             roundNumber = curr.currentRoundIndex + 1,
@@ -2695,35 +2718,56 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
             stage = BattleStage.ROUND_REVEAL,
             userScore = newUserScore,
             opponentScore = newOppScore,
+            userStreak = newUserStreak,
+            opponentStreak = newOppStreak,
             opponentSelectedAnswer = oppAns,
             roundResults = curr.roundResults + roundResult
         )
 
-        viewModelScope.launch {
-            delay(2200)
+        // Ultra-fast 250ms feedback flash, then instant next MCQ (no sluggish pause)
+        battleAdvanceJob = viewModelScope.launch {
+            delay(250)
             val nextIdx = curr.currentRoundIndex + 1
             if (nextIdx < curr.totalRounds) {
                 _battleArenaState.value = _battleArenaState.value.copy(currentRoundIndex = nextIdx)
                 startLocalBattleRound()
             } else {
-                val finalWin = newUserScore > newOppScore
-                val profile = repository.getUserProfileDirect()
-                if (profile != null) {
-                    val addCoins = if (finalWin) 50 else 15
-                    val addXP = if (finalWin) 120 else 40
-                    val addStars = if (finalWin) 2 else 0
-                    repository.saveUserProfile(
-                        profile.copy(
-                            coins = profile.coins + addCoins,
-                            stars = profile.stars + addStars,
-                            xp = profile.xp + addXP
-                        )
-                    )
-                }
-
-                _battleArenaState.value = _battleArenaState.value.copy(stage = BattleStage.GAME_OVER)
+                completeLocalBattleMatch(newUserScore, newOppScore)
             }
         }
+    }
+
+    fun finishBattleEarly() {
+        battleTimerJob?.cancel()
+        opponentResponseJob?.cancel()
+        battleAdvanceJob?.cancel()
+        val curr = _battleArenaState.value
+        if (curr.isOnlineMatch) {
+            exitBattleArena()
+            return
+        }
+        viewModelScope.launch {
+            completeLocalBattleMatch(curr.userScore, curr.opponentScore)
+        }
+    }
+
+    private suspend fun completeLocalBattleMatch(finalUserScore: Int, finalOppScore: Int) {
+        val finalWin = finalUserScore > finalOppScore
+        val roundsPlayed = _battleArenaState.value.roundResults.size
+        val profile = repository.getUserProfileDirect()
+        if (profile != null && roundsPlayed > 0) {
+            val addCoins = if (finalWin) 50 else 15
+            val addXP = if (finalWin) 120 else 40
+            val addStars = if (finalWin) 2 else 0
+            repository.saveUserProfile(
+                profile.copy(
+                    coins = profile.coins + addCoins,
+                    stars = profile.stars + addStars,
+                    xp = profile.xp + addXP
+                )
+            )
+        }
+        _battleArenaState.value = _battleArenaState.value.copy(stage = BattleStage.GAME_OVER)
     }
 
     // --- Student Profile Customization & Firestore Persistence ---
@@ -2764,6 +2808,7 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     fun exitBattleArena() {
         battleTimerJob?.cancel()
         opponentResponseJob?.cancel()
+        battleAdvanceJob?.cancel()
         onlineMatchmakingTimerJob?.cancel()
         val roomId = _battleArenaState.value.roomId
         if (roomId.isNotEmpty()) {

@@ -200,8 +200,58 @@ object QuizStaticData {
         )
     )
 
-    // Complete standards list containing Std 6-10 plus Morarji and NMMS
-    val standardsList: List<StandardTemplate> = std6To10List + listOf(morarjiStandard, nmmsStandard)
+    // TET class (Std 13): KAR-TET / CTET Preparation
+    val tetStandard = StandardTemplate(
+        std = 13,
+        name = "TET",
+        subjects = listOf(
+            SubjectTemplate("cdp", "Child Development & Pedagogy (ಶೈಕ್ಷಣಿಕ ಮನೋವಿಜ್ಞಾನ)", "cdp", 0xFF0EA5E9, TetQuestionBank.cdpUnits),
+            SubjectTemplate("kannada", "Kannada & Pedagogy (ಕನ್ನಡ ಬೋಧನಾಶಾಸ್ತ್ರ)", "kannada", 0xFF2196F3, TetQuestionBank.kannadaUnits),
+            SubjectTemplate("english", "English & Pedagogy", "english", 0xFF4CAF50, TetQuestionBank.englishUnits),
+            SubjectTemplate("math", "Mathematics & Pedagogy (ಗಣಿತ)", "math", 0xFFE91E63, TetQuestionBank.mathUnits),
+            SubjectTemplate("general_science", "EVS, Science & Social Pedagogy", "general_science", 0xFF059669, TetQuestionBank.evsUnits)
+        )
+    )
+
+    // NET class (Std 14): UGC-NET / KSET Paper 1 Preparation
+    val netStandard = StandardTemplate(
+        std = 14,
+        name = "NET",
+        subjects = listOf(
+            SubjectTemplate("teaching_research", "Teaching & Research Aptitude", "teaching_research", 0xFF6366F1, NetQuestionBank.teachingResearchUnits),
+            SubjectTemplate("logical_reasoning", "Logical Reasoning & DI", "mental_ability", 0xFF8B5CF6, NetQuestionBank.logicalReasoningUnits),
+            SubjectTemplate("ict_communication", "ICT & Communication", "computer", 0xFF06B6D4, NetQuestionBank.ictCommunicationUnits),
+            SubjectTemplate("higher_ed_env", "People, Environment & Higher Ed", "general_science", 0xFF10B981, NetQuestionBank.higherEdEnvUnits)
+        )
+    )
+
+    // KPSC class (Std 15): KAS / FDA / SDA / PDO Preparation
+    val kpscStandard = StandardTemplate(
+        std = 15,
+        name = "KPSC",
+        subjects = listOf(
+            SubjectTemplate("kpsc_kannada", "ಸಾಮಾನ್ಯ ಕನ್ನಡ (General Kannada)", "kannada", 0xFF2196F3, KpscKannadaUnitsQuestionBank.generalKannadaUnits),
+            SubjectTemplate("kpsc_english", "ಸಾಮಾನ್ಯ ಇಂಗ್ಲಿಷ್ (General English)", "english", 0xFF4CAF50, KpscKannadaUnitsQuestionBank.generalEnglishUnits),
+            SubjectTemplate("kpsc_gk", "ಸಾಮಾನ್ಯ ಜ್ಞಾನ (General Knowledge)", "gk", 0xFFF59E0B, KpscKannadaUnitsQuestionBank.generalKnowledgeUnits),
+            SubjectTemplate("kpsc_science", "ಸಾಮಾನ್ಯ ವಿಜ್ಞಾನ (General Science)", "science", 0xFF0EA5E9, KpscKannadaUnitsQuestionBank.generalScienceUnits),
+            SubjectTemplate("kpsc_kannada_grammar", "ಕನ್ನಡ ವ್ಯಾಕರಣ (Kannada Grammar)", "kannada", 0xFFE91E63, KpscKannadaUnitsQuestionBank.kannadaGrammarUnits),
+            SubjectTemplate("kpsc_computer", "ಕಂಪ್ಯೂಟರ್ ಜ್ಞಾನ (Computer Basics)", "computer", 0xFF06B6D4, KpscKannadaUnitsQuestionBank.computerKnowledgeUnits),
+            SubjectTemplate("karnataka_history", "Karnataka History & Culture (ಕರ್ನಾಟಕ ಇತಿಹಾಸ)", "social", 0xFFD97706, KpscQuestionBank.karnatakaHistoryUnits),
+            SubjectTemplate("indian_polity", "Indian Polity & Constitution (ಸಂವಿಧಾನ)", "gk", 0xFFEF4444, KpscQuestionBank.polityUnits),
+            SubjectTemplate("geography_economy", "Geography & Indian Economy", "general_science", 0xFF059669, KpscQuestionBank.geoEconomyUnits),
+            SubjectTemplate("general_science", "General Science & Technology", "science", 0xFF9C27B0, KpscQuestionBank.scienceTechUnits),
+            SubjectTemplate("mental_ability", "CSAT & Mental Ability (ಮಾನಸಿಕ ಸಾಮರ್ಥ್ಯ)", "mental_ability", 0xFF8B5CF6, KpscQuestionBank.mentalAbilityUnits)
+        )
+    )
+
+    // Complete standards list containing Std 6-10 plus Morarji, NMMS, TET, NET, and KPSC
+    val standardsList: List<StandardTemplate> = std6To10List + listOf(
+        morarjiStandard,
+        nmmsStandard,
+        tetStandard,
+        netStandard,
+        kpscStandard
+    )
 
     /**
      * Determines the next unit in sequence.
@@ -1348,6 +1398,9 @@ object QuizStaticData {
             addAll(Std10SocialQuestionBank.questions)
             addAll(Std10MathsQuestionBank.questions)
             addAll(FlnCompetencyQuestionBank.questions)
+            addAll(TetQuestionBank.allQuestions)
+            addAll(NetQuestionBank.allQuestions)
+            addAll(KpscQuestionBank.allQuestions)
         }
 
     /**
@@ -1454,6 +1507,32 @@ object QuizStaticData {
                 "sat_math", "math" -> result.addAll(NmmsSatMathsQuestionBank.questions)
                 "sat_science", "science" -> result.addAll(NmmsSatScienceQuestionBank.questions)
                 "sat_social", "social" -> result.addAll(NmmsSatSocialQuestionBank.questions)
+            }
+            13 -> when (subj) {
+                "cdp" -> result.addAll(TetQuestionBank.cdpQuestions)
+                "kannada" -> result.addAll(TetQuestionBank.kannadaQuestions)
+                "english" -> result.addAll(TetQuestionBank.englishQuestions)
+                "math", "sat_math" -> result.addAll(TetQuestionBank.mathQuestions)
+                "general_science", "science", "social" -> result.addAll(TetQuestionBank.evsQuestions)
+            }
+            14 -> when (subj) {
+                "teaching_research" -> result.addAll(NetQuestionBank.teachingResearchQuestions)
+                "logical_reasoning", "mental_ability", "gmat" -> result.addAll(NetQuestionBank.logicalReasoningQuestions)
+                "ict_communication", "computer" -> result.addAll(NetQuestionBank.ictCommunicationQuestions)
+                "higher_ed_env", "general_science" -> result.addAll(NetQuestionBank.higherEdEnvQuestions)
+            }
+            15 -> when (subj) {
+                "kpsc_kannada", "kannada" -> result.addAll(KpscKannadaUnitsQuestionBank.generalKannadaQuestions)
+                "kpsc_english", "english" -> result.addAll(KpscKannadaUnitsQuestionBank.generalEnglishQuestions)
+                "kpsc_gk" -> result.addAll(KpscKannadaUnitsQuestionBank.generalKnowledgeQuestions)
+                "kpsc_science" -> result.addAll(KpscKannadaUnitsQuestionBank.generalScienceQuestions)
+                "kpsc_kannada_grammar" -> result.addAll(KpscKannadaUnitsQuestionBank.kannadaGrammarQuestions)
+                "kpsc_computer" -> result.addAll(KpscKannadaUnitsQuestionBank.computerKnowledgeQuestions)
+                "karnataka_history", "social" -> result.addAll(KpscQuestionBank.karnatakaHistoryQuestions)
+                "indian_polity", "gk" -> result.addAll(KpscQuestionBank.polityQuestions)
+                "geography_economy" -> result.addAll(KpscQuestionBank.geoEconomyQuestions)
+                "general_science", "science" -> result.addAll(KpscQuestionBank.scienceTechQuestions)
+                "mental_ability", "gmat" -> result.addAll(KpscQuestionBank.mentalAbilityQuestions)
             }
         }
         return result

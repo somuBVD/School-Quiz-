@@ -474,7 +474,7 @@ fun SubscriptionPaywallScreen(
                             is SubscriptionAccessState.FreeTrialActive ->
                                 "${access.daysRemaining} day(s) remaining in your free trial (ends ${dateFormatter.format(Date(access.trialEndMillis))}). Subscribe early so your learning never stops."
                             is SubscriptionAccessState.TrialExpired ->
-                                "Continue mastering Classes 6–10, Morarji, NMMS & live 1 vs 1 battles for just ₹20 per month."
+                                "Continue mastering Classes 6–10, Morarji, NMMS, TET, NET, KPSC & live 1 vs 1 battles for just ₹20 per month."
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White.copy(alpha = 0.9f),
@@ -533,7 +533,7 @@ fun SubscriptionPaywallScreen(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                     val benefits = listOf(
-                        "Full Classes 6–10, Morarji & NMMS question bank",
+                        "Full Classes 6–10, Morarji, NMMS, TET, NET & KPSC question bank",
                         "Live Online 1 vs 1 Battle Arena with Google Sign-In",
                         "Timed Quiz Countdown, Mock Exams & Flashcards",
                         "English, Kannada & Hindi multi-language support",

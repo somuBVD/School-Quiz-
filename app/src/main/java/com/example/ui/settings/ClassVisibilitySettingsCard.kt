@@ -86,12 +86,33 @@ val ALL_CONFIGURABLE_CLASSES = listOf(
         subtitle = "GMAT (Mental Ability) & SAT (Maths, Science, Social)",
         badgeLabel = "NM",
         badgeColor = Color(0xFF8B5CF6)
+    ),
+    ClassVisibilityItem(
+        std = 13,
+        title = "TET (Teacher Eligibility Test)",
+        subtitle = "Child Development & Pedagogy, Kannada, English, Maths, EVS",
+        badgeLabel = "TET",
+        badgeColor = Color(0xFF0284C7)
+    ),
+    ClassVisibilityItem(
+        std = 14,
+        title = "NET (UGC-NET / KSET)",
+        subtitle = "Teaching & Research Aptitude, Reasoning, ICT, Higher Education",
+        badgeLabel = "NET",
+        badgeColor = Color(0xFF7C3AED)
+    ),
+    ClassVisibilityItem(
+        std = 15,
+        title = "KPSC (KAS / FDA / SDA / PDO)",
+        subtitle = "Karnataka History, Indian Polity, Geography, Economy, Science, CSAT",
+        badgeLabel = "KP",
+        badgeColor = Color(0xFFDC2626)
     )
 )
 
 /**
  * Material 3 Card inside Settings that allows students and teachers to hide and show
- * class switches for Standards 6 to 10, Morarji, and NMMS.
+ * class switches for Standards 6 to 10, Morarji, NMMS, TET, NET, and KPSC.
  */
 @Composable
 fun ClassVisibilitySettingsCard(
@@ -240,10 +261,10 @@ fun ClassVisibilitySettingsCard(
                 )
                 AssistChip(
                     onClick = {
-                        settingsViewModel.setVisibleStandards(setOf(11, 12))
-                        Toast.makeText(context, "Competitive (Morarji & NMMS) enabled", Toast.LENGTH_SHORT).show()
+                        settingsViewModel.setVisibleStandards(setOf(11, 12, 13, 14, 15))
+                        Toast.makeText(context, "Competitive Exams (Morarji, NMMS, TET, NET, KPSC) enabled", Toast.LENGTH_SHORT).show()
                     },
-                    label = { Text("Morarji & NMMS", fontSize = 10.5.sp) },
+                    label = { Text("Competitive Exams", fontSize = 10.5.sp) },
                     modifier = Modifier.testTag("preset_competitive")
                 )
             }

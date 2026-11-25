@@ -21,9 +21,10 @@ import kotlinx.coroutines.launch
         QuizQuestionEntity::class,
         HistoricalScoreEntity::class,
         StudentPointEntity::class,
-        DownloadedQuizEntity::class
+        DownloadedQuizEntity::class,
+        KpscStudyMaterialEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class QuizDatabase : RoomDatabase() {
@@ -34,6 +35,7 @@ abstract class QuizDatabase : RoomDatabase() {
     abstract fun studentProgressDao(): StudentProgressDao
     abstract fun historicalScoreDao(): HistoricalScoreDao
     abstract fun studentPointDao(): StudentPointDao
+    abstract fun kpscStudyMaterialDao(): KpscStudyMaterialDao
 
     companion object {
         @Volatile

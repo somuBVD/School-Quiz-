@@ -10,7 +10,7 @@ data class BattleOpponent(
     val standard: Int,
     val winRate: Int,
     val accuracy: Float, // 0.0 to 1.0
-    val responseSpeedRangeMs: LongRange = 2500L..7000L
+    val responseSpeedRangeMs: LongRange = 800L..2500L
 )
 
 enum class BattleStage {
@@ -38,7 +38,7 @@ data class BattleArenaState(
     val opponent: BattleOpponent? = null,
     val questions: List<QuestionModel> = emptyList(),
     val currentRoundIndex: Int = 0,
-    val roundSecondsRemaining: Int = 15,
+    val roundSecondsRemaining: Int = 10,
     val userScore: Int = 0,
     val opponentScore: Int = 0,
     val userSelectedAnswer: String = "",

@@ -697,7 +697,7 @@ fun RecommendationDetailDialog(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "${item.subjectTitle} • Standard ${item.stdId}",
+                        text = "${item.subjectTitle} • ${StandardGrade.shortLabel(item.stdId, "Standard")}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = subjectColor,

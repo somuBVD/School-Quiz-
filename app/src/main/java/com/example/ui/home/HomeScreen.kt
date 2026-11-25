@@ -88,7 +88,10 @@ fun HomeScreen(
     val scrollState = rememberScrollState()
     val context = LocalContext.current
     val visibleStandards by (settingsViewModel?.visibleStandards?.collectAsState()
-        ?: remember { mutableStateOf(setOf(6, 7, 8, 9, 10, 11, 12)) })
+        ?: remember { mutableStateOf(setOf(6, 7, 8, 9, 10, 11, 12, 13, 14, 15)) })
+    val kpscSyncedQuestionCount by viewModel.kpscSyncedQuestionCount.collectAsState()
+    val kpscStudyMaterials by viewModel.kpscStudyMaterials.collectAsState()
+    val kpscSyncStatus by viewModel.kpscSyncStatus.collectAsState()
 
     // If current selected standard was hidden in settings, switch to the first available visible standard
     LaunchedEffect(visibleStandards) {
@@ -211,6 +214,9 @@ fun HomeScreen(
                                         val stdLabel = when (profile.standard) {
                                             11 -> "Morarji"
                                             12 -> "NMMS"
+                                            13 -> "TET"
+                                            14 -> "NET"
+                                            15 -> "KPSC"
                                             else -> "${Translator.translate("std", currentLang)} ${profile.standard}"
                                         }
                                         Text(
@@ -1061,6 +1067,9 @@ fun HomeScreen(
                             val mockStdLabel = when (selectedStd) {
                                 11 -> "Morarji"
                                 12 -> "NMMS"
+                                13 -> "TET"
+                                14 -> "NET"
+                                15 -> "KPSC"
                                 else -> "Std $selectedStd"
                             }
                             Text(
@@ -1392,6 +1401,32 @@ fun HomeScreen(
                 }
             }
 
+            // 1.5. Dedicated KPSC Exam Preparation Category Hub (Kannada, English, GK, Science, Computer Basics)
+            if (visibleStandards.contains(15)) {
+                KpscExamPrepSection(
+                    selectedStd = selectedStd,
+                    selectedSubjectFilter = selectedSubjectFilter,
+                    progressList = progressList,
+                    isDark = isDark,
+                    onSelectModule = { subjectId ->
+                        viewModel.changeStandard(15)
+                        viewModel.setSubjectFilter(subjectId)
+                        expandedSubjectId = subjectId
+                    },
+                    onSelectAllKpsc = {
+                        viewModel.changeStandard(15)
+                        viewModel.setSubjectFilter("all")
+                        expandedSubjectId = null
+                    },
+                    onStartQuiz = onStartQuiz,
+                    kpscSyncedQuestionCount = kpscSyncedQuestionCount,
+                    kpscMaterialCount = kpscStudyMaterials.size,
+                    kpscSyncStatus = kpscSyncStatus,
+                    onSyncKpscContent = { viewModel.triggerKpscContentSync() },
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+
             // 2. Subject: Horizontal Scrolling Bar
             Row(
                 modifier = Modifier
@@ -1411,6 +1446,35 @@ fun HomeScreen(
                 )
 
                 val subjectFilterOptions = when (selectedStd) {
+                    15 -> listOf(
+                        "all" to "All Subjects",
+                        "kpsc_kannada" to "✍️ ಸಾಮಾನ್ಯ ಕನ್ನಡ",
+                        "kpsc_english" to "📖 ಸಾಮಾನ್ಯ ಇಂಗ್ಲಿಷ್",
+                        "kpsc_gk" to "💡 ಸಾಮಾನ್ಯ ಜ್ಞಾನ",
+                        "kpsc_science" to "🔬 ಸಾಮಾನ್ಯ ವಿಜ್ಞಾನ",
+                        "kpsc_kannada_grammar" to "📝 ಕನ್ನಡ ವ್ಯಾಕರಣ",
+                        "kpsc_computer" to "💻 ಕಂಪ್ಯೂಟರ್ ಜ್ಞಾನ",
+                        "karnataka_history" to "🏛️ Karnataka History",
+                        "indian_polity" to "⚖️ Indian Polity",
+                        "geography_economy" to "🗺️ Geo & Economy",
+                        "general_science" to "🔬 Science & Tech",
+                        "mental_ability" to "🧠 CSAT Reasoning"
+                    )
+                    14 -> listOf(
+                        "all" to "All Subjects",
+                        "teaching_research" to "🎓 Teaching & Research",
+                        "logical_reasoning" to "🧩 Reasoning & DI",
+                        "ict_communication" to "💻 ICT & Comm.",
+                        "higher_ed_env" to "🌍 Env & Higher Ed"
+                    )
+                    13 -> listOf(
+                        "all" to "All Subjects",
+                        "cdp" to "🧠 Child Dev & Pedagogy",
+                        "kannada" to "✍️ Kannada",
+                        "english" to "📖 English",
+                        "math" to "📐 Maths",
+                        "general_science" to "🌿 EVS & Social"
+                    )
                     12 -> listOf(
                         "all" to "All Subjects",
                         "gmat" to "🧩 GMAT",
@@ -1578,6 +1642,9 @@ fun HomeScreen(
             val selectedStdName = when (selectedStd) {
                 11 -> "Morarji"
                 12 -> "NMMS"
+                13 -> "TET"
+                14 -> "NET"
+                15 -> "KPSC"
                 else -> "${Translator.translate("std", currentLang)} $selectedStd"
             }
             Text(
@@ -1728,6 +1795,8 @@ fun HomeScreen(
                                         "general_science" -> "🌿"
                                         "gk" -> "💡"
                                         "mental_ability" -> "🧩"
+                                        "cdp" -> "🧠"
+                                        "teaching_research" -> "🎓"
                                         else -> "📚"
                                     }
                                     Text(icon, fontSize = 20.sp)

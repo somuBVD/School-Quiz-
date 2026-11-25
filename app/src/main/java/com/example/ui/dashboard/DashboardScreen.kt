@@ -237,6 +237,9 @@ fun DashboardScreen(
                                 val stdDisplay = when (profile.standard) {
                                     11 -> "Morarji"
                                     12 -> "NMMS"
+                                    13 -> "TET"
+                                    14 -> "NET"
+                                    15 -> "KPSC"
                                     else -> "${Translator.translate("std", currentLang)} ${profile.standard}"
                                 }
                                 Text(

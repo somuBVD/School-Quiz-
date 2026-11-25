@@ -51,4 +51,19 @@
     <string name="global_leaderboard_empty_title">Be #1 on the Global Leaderboard!</string>
     <string name="global_leaderboard_empty_desc">No students have posted XP yet. Publish your XP now to claim the top spot.</string>
     <string name="global_leaderboard_publish_cta">Publish My XP</string>
+    <string name="kpsc_exam_prep_title">KPSC Exam Preparation</string>
+    <string name="kpsc_exam_prep_subtitle">KAS • FDA • SDA • PDO Competitive Hub</string>
+    <string name="kpsc_exam_prep_badge">KPSC</string>
+    <string name="kpsc_exam_prep_view_all">All KPSC</string>
+    <string name="kpsc_exam_prep_mock_cta">Mock Exam</string>
+    <string name="kpsc_module_kannada">Kannada</string>
+    <string name="kpsc_module_english">English</string>
+    <string name="kpsc_module_gk">General Knowledge</string>
+    <string name="kpsc_module_science">Science</string>
+    <string name="kpsc_module_computer">Computer Basics</string>
+    <string name="kpsc_sync_ready">Offline Indexed</string>
+    <string name="kpsc_sync_cloud_ready">Cloud + Offline Ready</string>
+    <string name="kpsc_sync_syncing">Syncing KPSC content…</string>
+    <string name="kpsc_sync_action">Sync</string>
+    <string name="kpsc_sync_cd">Sync KPSC study materials and quizzes for offline access</string>
 </resources>

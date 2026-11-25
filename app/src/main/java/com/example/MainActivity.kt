@@ -76,6 +76,7 @@ class MainActivity : ComponentActivity() {
         // Configure Firestore offline persistence & automatic background synchronization
         com.example.auth.FirebaseCloudSyncManager.getInstance(applicationContext)
         com.example.sync.QuizDataSyncWorker.schedulePeriodic(applicationContext)
+        com.example.sync.KpscContentSyncWorker.schedulePeriodic(applicationContext)
 
         val themeManager = ThemeManager.getInstance(applicationContext)
         val database = QuizDatabase.getDatabase(applicationContext, lifecycleScope)
@@ -85,7 +86,8 @@ class MainActivity : ComponentActivity() {
             downloadedQuizDao = database.downloadedQuizDao(),
             studentProgressDao = database.studentProgressDao(),
             historicalScoreDao = database.historicalScoreDao(),
-            studentPointDao = database.studentPointDao()
+            studentPointDao = database.studentPointDao(),
+            kpscStudyMaterialDao = database.kpscStudyMaterialDao()
         )
         val factory = QuizViewModelFactory(application, repository)
         val viewModel = ViewModelProvider(this, factory)[QuizViewModel::class.java]

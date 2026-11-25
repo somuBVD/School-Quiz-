@@ -39,6 +39,7 @@ fun BattleArenaScreen(
     modifier: Modifier = Modifier
 ) {
     val battleState by viewModel.battleArenaState.collectAsState()
+    val selectedStd by viewModel.selectedStd.collectAsState()
     val isDark by viewModel.isDarkMode.collectAsState()
     val userProfile by viewModel.userProfile.collectAsState()
     val isFirebaseGoogleSignedIn by viewModel.isFirebaseGoogleSignedIn.collectAsState()
@@ -123,11 +124,13 @@ fun BattleArenaScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            // Keep IN_PROGRESS and ROUND_REVEAL in the same AnimatedContent bucket so transitions between MCQs have zero flicker/delay
+            val screenStage = if (battleState.stage == BattleStage.ROUND_REVEAL) BattleStage.IN_PROGRESS else battleState.stage
             AnimatedContent(
-                targetState = battleState.stage,
+                targetState = screenStage,
                 transitionSpec = {
-                    (fadeIn(animationSpec = tween(280)) + scaleIn(initialScale = 0.94f)) togetherWith
-                    (fadeOut(animationSpec = tween(200)) + scaleOut(targetScale = 0.94f))
+                    (fadeIn(animationSpec = tween(140)) + scaleIn(initialScale = 0.97f)) togetherWith
+                    (fadeOut(animationSpec = tween(100)) + scaleOut(targetScale = 0.97f))
                 },
                 label = "battle_stage_transition",
                 modifier = Modifier.fillMaxSize()
@@ -138,6 +141,7 @@ fun BattleArenaScreen(
                         val authError = (authUiState as? com.example.auth.AuthUiState.Error)?.message
                         BattleLobbyView(
                             battleState = battleState,
+                            selectedStd = selectedStd,
                             isFirebaseGoogleSignedIn = isFirebaseGoogleSignedIn,
                             signedInDisplayName = signedInUser?.displayName ?: userProfile?.name ?: "Student",
                             authErrorMessage = authError,
@@ -163,6 +167,7 @@ fun BattleArenaScreen(
                             battleState = battleState,
                             userName = userProfile?.name ?: "Student",
                             onSubmitAnswer = { viewModel.submitBattleAnswer(it) },
+                            onFinishEarly = { viewModel.finishBattleEarly() },
                             isDark = isDark
                         )
                     }
@@ -170,7 +175,13 @@ fun BattleArenaScreen(
                         BattleGameOverView(
                             battleState = battleState,
                             userName = userProfile?.name ?: "Student",
-                            onPlayAgain = { viewModel.findBattleMatch() },
+                            onPlayAgain = {
+                                if (battleState.isOnlineMatch) {
+                                    viewModel.findBattleMatch()
+                                } else {
+                                    viewModel.startAiBattleChallenger()
+                                }
+                            },
                             onExit = { viewModel.exitBattleArena() },
                             isDark = isDark
                         )
@@ -184,6 +195,7 @@ fun BattleArenaScreen(
 @Composable
 fun BattleLobbyView(
     battleState: BattleArenaState,
+    selectedStd: Int,
     isFirebaseGoogleSignedIn: Boolean,
     signedInDisplayName: String,
     authErrorMessage: String?,
@@ -221,27 +233,49 @@ fun BattleLobbyView(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Real-Time Online Duel",
-                        color = Color(0xFFA5B4FC),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
+                        text = "⚡ SPEEDY ZERO-DELAY 1v1 DUEL",
+                        color = Color(0xFFFDE68A),
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Black
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Real Students 1 vs 1 Battle Online!",
+                        text = "Max MCQ Quick Battle Arena!",
                         color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.ExtraBold
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "5 Rapid Questions • 15s Per Round • Live Firebase Cloud Synchronized",
-                        color = Color.White.copy(alpha = 0.85f),
-                        fontSize = 11.sp
+                        text = "Maximum Unique MCQs • 10s Speedy Rounds • Instant Next Question",
+                        color = Color.White.copy(alpha = 0.88f),
+                        fontSize = 11.5.sp
                     )
                 }
                 Text("⚔️", fontSize = 48.sp)
             }
+        }
+
+        // Instant Zero-Delay Quick Battle CTA (Always accessible at the top)
+        Button(
+            onClick = onPracticeWithAi,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp)
+                .testTag("start_instant_speed_battle_button"),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
+        ) {
+            Icon(Icons.Default.Bolt, contentDescription = null, tint = Color.White)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "INSTANT SPEED BATTLE (MAX MCQs • NO DELAY)",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 13.sp,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
 
         // Firebase Auth & Named Cloud Firestore Connection Status Card
@@ -354,18 +388,43 @@ fun BattleLobbyView(
             fontWeight = FontWeight.ExtraBold
         )
 
-        val subjects = listOf(
-            Triple("fln", "FLN (Basics)", "💡"),
-            Triple("mixed", "All Subjects (Mixed)", "⚡"),
-            Triple("math", "Mathematics", "📐"),
-            Triple("science", "Science", "🔬"),
-            Triple("kannada", "Kannada", "✍️"),
-            Triple("english", "English", "🔤"),
-            Triple("social", "Social Science", "🌍"),
-            Triple("hindi", "Hindi", "🇮🇳"),
-            Triple("general_science", "Environmental Studies", "🌿"),
-            Triple("mental_ability", "Mental Ability (ಬೌದ್ಧಿಕ ಸಾಮರ್ಥ್ಯ)", "🧩")
-        )
+        val subjects = remember(selectedStd) {
+            val stdSubjects = com.example.data.QuizStaticData.standardsList
+                .find { it.std == selectedStd }
+                ?.subjects
+                .orEmpty()
+            val dynamicList = mutableListOf(Triple("mixed", "All Subjects (Max MCQs)", "⚡"))
+            stdSubjects.forEach { subj ->
+                val emoji = when (subj.iconName) {
+                    "kannada" -> "✍️"
+                    "english" -> "🔤"
+                    "hindi" -> "🇮🇳"
+                    "math" -> "📐"
+                    "science" -> "🔬"
+                    "social" -> "🌍"
+                    "computer" -> "💻"
+                    "general_science" -> "🌿"
+                    "gk" -> "💡"
+                    "mental_ability" -> "🧩"
+                    "cdp" -> "🧠"
+                    "teaching_research" -> "🎓"
+                    else -> "📚"
+                }
+                dynamicList.add(Triple(subj.id, subj.title, emoji))
+            }
+            if (dynamicList.size <= 1) {
+                listOf(
+                    Triple("mixed", "All Subjects (Max MCQs)", "⚡"),
+                    Triple("math", "Mathematics", "📐"),
+                    Triple("science", "Science", "🔬"),
+                    Triple("kannada", "Kannada", "✍️"),
+                    Triple("english", "English", "🔤"),
+                    Triple("social", "Social Science", "🌍")
+                )
+            } else {
+                dynamicList
+            }
+        }
 
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -629,6 +688,7 @@ fun BattleMatchView(
     battleState: BattleArenaState,
     userName: String,
     onSubmitAnswer: (String) -> Unit,
+    onFinishEarly: () -> Unit,
     isDark: Boolean
 ) {
     val currentQuestion = battleState.currentQuestion ?: return
@@ -701,7 +761,7 @@ fun BattleMatchView(
                         Spacer(modifier = Modifier.height(2.dp))
                         Surface(
                             shape = CircleShape,
-                            color = if (battleState.roundSecondsRemaining <= 5) Color(0xFFEF4444) else Color(0xFFF59E0B)
+                            color = if (battleState.roundSecondsRemaining <= 3) Color(0xFFEF4444) else Color(0xFFF59E0B)
                         ) {
                             Text(
                                 text = "${battleState.roundSecondsRemaining}s",
@@ -787,32 +847,53 @@ fun BattleMatchView(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "ONLINE 1v1 • ${opponent?.school ?: "Karnataka"}",
+                                text = "ONLINE SPEED 1v1 • ${opponent?.school ?: "Karnataka"}",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF059669)
                             )
                         }
                     } else {
-                        Text(
-                            text = "🤖 AI CHALLENGER",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = if (battleState.userStreak >= 2) "⚡ SPEEDY • 🔥 ${battleState.userStreak}x" else "⚡ SPEEDY QUICK BATTLE",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF10B981)
+                            )
+                            if (battleState.roundResults.isNotEmpty()) {
+                                Surface(
+                                    onClick = onFinishEarly,
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFFEF4444).copy(alpha = 0.14f),
+                                    modifier = Modifier.testTag("battle_finish_early_button")
+                                ) {
+                                    Text(
+                                        text = "Finish",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFEF4444),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     if (battleState.opponentSelectedAnswer.isNotEmpty() || battleState.opponentAnswerLocked) {
                         Text(
-                            text = "⚡ Opponent locked in!",
+                            text = "⚡ Locked in!",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF10B981)
                         )
                     } else {
                         Text(
-                            text = "💭 Opponent is thinking...",
-                            fontSize = 11.sp,
+                            text = "⚡ Tap fast — no delay!",
+                            fontSize = 10.5.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -954,11 +1035,13 @@ fun BattleGameOverView(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        val playedCount = battleState.roundResults.size
+        val correctCount = battleState.roundResults.count { it.userCorrect }
         Text(
             text = when {
-                isWin -> "Outstanding duel! You outsmarted your rival!"
-                isDraw -> "Incredible match! Both students matched in skills!"
-                else -> "Tough duel! Review concepts and challenge again!"
+                isWin -> "Outstanding speed duel! $correctCount/$playedCount MCQs correct."
+                isDraw -> "Close match! $correctCount/$playedCount MCQs correct."
+                else -> "Great practice! $correctCount/$playedCount MCQs correct — rematch now!"
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

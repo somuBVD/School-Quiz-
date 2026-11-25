@@ -69,7 +69,7 @@ service cloud.firestore {
       return data.uid == userId
         && (!('displayName' in data) || isNonEmptyString(data.displayName, 1, 100))
         && (!('email' in data) || (data.email is string && data.email.size() <= 200))
-        && (!('standard' in data) || (data.standard is int && data.standard >= 1 && data.standard <= 12))
+        && (!('standard' in data) || (data.standard is int && data.standard >= 1 && data.standard <= 20))
         && (!('trialStartMillis' in data) || (data.trialStartMillis is int && data.trialStartMillis >= 0))
         && (!('subscriptionActive' in data) || data.subscriptionActive is bool)
         && (!('subscriptionAutoRenewing' in data) || data.subscriptionAutoRenewing is bool)
@@ -88,7 +88,7 @@ service cloud.firestore {
 
     function isValidStudent(data) {
       return isNonEmptyString(data.name, 1, 100)
-        && data.standard is int && data.standard >= 1 && data.standard <= 12
+        && data.standard is int && data.standard >= 1 && data.standard <= 20
         && (!('coins' in data) || (data.coins is int && data.coins >= 0 && data.coins <= 10000000))
         && (!('stars' in data) || (data.stars is int && data.stars >= 0 && data.stars <= 1000000))
         && (!('xp' in data) || (data.xp is int && data.xp >= 0 && data.xp <= 10000000))
@@ -98,7 +98,7 @@ service cloud.firestore {
     function isValidGlobalLeaderboardEntry(data, studentId) {
       return data.uid == studentId
         && isNonEmptyString(data.displayName, 1, 60)
-        && data.standard is int && data.standard >= 1 && data.standard <= 12
+        && data.standard is int && data.standard >= 1 && data.standard <= 20
         && data.xp is int && data.xp >= 0 && data.xp <= 10000000
         && (!('avatar' in data) || (data.avatar is string && data.avatar.size() <= 250))
         && (!('stars' in data) || (data.stars is int && data.stars >= 0 && data.stars <= 1000000))
@@ -111,7 +111,49 @@ service cloud.firestore {
         && isNonEmptyString(data.questionText, 1, 2000)
         && isNonEmptyString(data.correctAnswer, 1, 500)
         && (!('options' in data) || (data.options is list && data.options.size() <= 8))
-        && (!('stdId' in data) || (data.stdId is int && data.stdId >= 1 && data.stdId <= 12));
+        && (!('stdId' in data) || (data.stdId is int && data.stdId >= 1 && data.stdId <= 20));
+    }
+
+    function isValidKpscSubjectId(subjectId) {
+      return subjectId in [
+        'kpsc_kannada',
+        'kpsc_english',
+        'kpsc_gk',
+        'kpsc_science',
+        'kpsc_kannada_grammar',
+        'kpsc_computer',
+        'karnataka_history',
+        'indian_polity',
+        'geography_economy',
+        'general_science',
+        'mental_ability'
+      ];
+    }
+
+    function isValidKpscStudyMaterial(data) {
+      return data.keys().hasAll([
+          'subjectId', 'unitId', 'unitName', 'title', 'language',
+          'difficulty', 'contentVersion', 'published', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'subjectId', 'unitId', 'unitName', 'title', 'summary', 'contentMarkdown',
+          'language', 'difficulty', 'examTags', 'questions', 'contentVersion',
+          'published', 'createdAt', 'updatedAt'
+        ])
+        && isValidKpscSubjectId(data.subjectId)
+        && data.unitId is int && data.unitId >= 1 && data.unitId <= 100
+        && isNonEmptyString(data.unitName, 1, 160)
+        && isNonEmptyString(data.title, 1, 200)
+        && (!('summary' in data) || (data.summary is string && data.summary.size() <= 1000))
+        && (!('contentMarkdown' in data) || (data.contentMarkdown is string && data.contentMarkdown.size() <= 25000))
+        && data.language in ['kn', 'en', 'bilingual']
+        && data.difficulty in ['Easy', 'Medium', 'Hard']
+        && (!('examTags' in data) || (data.examTags is list && data.examTags.size() <= 10))
+        && (!('questions' in data) || (data.questions is list && data.questions.size() <= 100))
+        && data.contentVersion is int && data.contentVersion >= 1 && data.contentVersion <= 10000
+        && data.published is bool
+        && data.createdAt is timestamp && data.createdAt <= request.time
+        && data.updatedAt is timestamp && data.updatedAt <= request.time;
     }
 
     function isValidBattleRoomCreate(data, roomId) {
@@ -120,7 +162,7 @@ service cloud.firestore {
         && data.hostUid == request.auth.uid
         && data.status == 'WAITING'
         && data.isPrivate is bool
-        && data.standard is int && data.standard >= 1 && data.standard <= 12
+        && data.standard is int && data.standard >= 1 && data.standard <= 20
         && isNonEmptyString(data.subject, 1, 60)
         && data.currentRound is int && data.currentRound == 0
         && data.participantUids is list
@@ -128,7 +170,7 @@ service cloud.firestore {
         && data.participantUids[0] == request.auth.uid
         && data.player1 is map
         && data.player1.uid == request.auth.uid
-        && data.questions is list && data.questions.size() <= 10
+        && data.questions is list && data.questions.size() <= 100
         && data.createdAt is timestamp && data.createdAt <= request.time
         && data.updatedAt is timestamp && data.updatedAt <= request.time;
     }
@@ -160,7 +202,7 @@ service cloud.firestore {
         && incoming().hostUid == existing().hostUid
         && createdAtUnchanged()
         && incoming().status in ['WAITING', 'IN_PROGRESS', 'ROUND_REVEAL', 'COMPLETED', 'CANCELLED']
-        && incoming().currentRound is int && incoming().currentRound >= 0 && incoming().currentRound <= 20
+        && incoming().currentRound is int && incoming().currentRound >= 0 && incoming().currentRound <= 100
         && incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
     }
 
@@ -239,6 +281,22 @@ service cloud.firestore {
       allow create, update: if isTeacherOrAdmin()
         && isValidId(questionId)
         && isValidQuestion(incoming());
+      allow delete: if isTeacherOrAdmin();
+    }
+
+    match /kpsc_study_materials/{materialId} {
+      allow get: if isSignedIn()
+        && isValidId(materialId)
+        && (resource.data.published == true || isTeacherOrAdmin());
+      allow list: if isSignedIn()
+        && (resource.data.published == true || isTeacherOrAdmin());
+      allow create: if isTeacherOrAdmin()
+        && isValidId(materialId)
+        && isValidKpscStudyMaterial(incoming());
+      allow update: if isTeacherOrAdmin()
+        && isValidId(materialId)
+        && isValidKpscStudyMaterial(incoming())
+        && createdAtUnchanged();
       allow delete: if isTeacherOrAdmin();
     }
 

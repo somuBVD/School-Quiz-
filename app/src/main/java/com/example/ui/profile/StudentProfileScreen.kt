@@ -405,6 +405,9 @@ fun StudentProfileScreen(
                                 val stdName = when (profile.standard) {
                                     11 -> "Morarji Entrance"
                                     12 -> "NMMS Scholarship"
+                                    13 -> "TET Exam"
+                                    14 -> "NET / KSET"
+                                    15 -> "KPSC Exam"
                                     else -> "Class ${profile.standard}"
                                 }
                                 Surface(
@@ -1263,10 +1266,13 @@ fun StudentProfileScreen(
                             .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        listOf(6, 7, 8, 9, 10, 11, 12).forEach { stdNum ->
+                        listOf(6, 7, 8, 9, 10, 11, 12, 13, 14, 15).forEach { stdNum ->
                             val label = when (stdNum) {
                                 11 -> "Morarji"
                                 12 -> "NMMS"
+                                13 -> "TET"
+                                14 -> "NET"
+                                15 -> "KPSC"
                                 else -> "Std $stdNum"
                             }
                             FilterChip(

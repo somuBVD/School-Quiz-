@@ -129,6 +129,118 @@ enum class SubjectType(
         iconName = "social",
         colorHex = 0xFFFF5722,
         description = "Scholastic Aptitude Test - Social Science"
+    ),
+    CDP(
+        id = "cdp",
+        displayName = "Child Development & Pedagogy",
+        vernacularName = "ಶೈಕ್ಷಣಿಕ ಮನೋವಿಜ್ಞಾನ (CDP)",
+        iconName = "cdp",
+        colorHex = 0xFF0EA5E9,
+        description = "Child development theories, learning psychology, NCF 2005, and RTE Act for TET"
+    ),
+    TEACHING_RESEARCH(
+        id = "teaching_research",
+        displayName = "Teaching & Research Aptitude",
+        vernacularName = "Teaching & Research Aptitude",
+        iconName = "teaching_research",
+        colorHex = 0xFF6366F1,
+        description = "Teaching levels, evaluation systems, research methodology, and ethics for UGC-NET / KSET"
+    ),
+    LOGICAL_REASONING(
+        id = "logical_reasoning",
+        displayName = "Logical Reasoning & DI",
+        vernacularName = "Logical Reasoning & Data Interpretation",
+        iconName = "mental_ability",
+        colorHex = 0xFF8B5CF6,
+        description = "Syllogisms, Indian Logic (Pramanas), fallacies, and data interpretation for NET"
+    ),
+    ICT_COMMUNICATION(
+        id = "ict_communication",
+        displayName = "ICT & Communication",
+        vernacularName = "ICT & Communication",
+        iconName = "computer",
+        colorHex = 0xFF06B6D4,
+        description = "Classroom communication models, ICT fundamentals, and digital initiatives for NET"
+    ),
+    HIGHER_ED_ENV(
+        id = "higher_ed_env",
+        displayName = "People, Environment & Higher Ed",
+        vernacularName = "Environment & Higher Education",
+        iconName = "general_science",
+        colorHex = 0xFF10B981,
+        description = "Sustainable Development Goals, climate treaties, UGC, NAAC, and NEP 2020 for NET"
+    ),
+    KARNATAKA_HISTORY(
+        id = "karnataka_history",
+        displayName = "Karnataka History & Culture",
+        vernacularName = "ಕರ್ನಾಟಕ ಇತಿಹಾಸ ಮತ್ತು ಸಂಸ್ಕೃತಿ",
+        iconName = "social",
+        colorHex = 0xFFD97706,
+        description = "Dynasties of Karnataka, Vijayanagara, Mysuru Wodeyars, and Ekikarana for KPSC"
+    ),
+    INDIAN_POLITY(
+        id = "indian_polity",
+        displayName = "Indian Polity & Constitution",
+        vernacularName = "ಭಾರತದ ಸಂವಿಧಾನ ಮತ್ತು ರಾಜಕೀಯ",
+        iconName = "gk",
+        colorHex = 0xFFEF4444,
+        description = "Fundamental Rights, DPSP, Parliament, Judiciary, and Panchayat Raj for KPSC"
+    ),
+    GEOGRAPHY_ECONOMY(
+        id = "geography_economy",
+        displayName = "Geography & Indian Economy",
+        vernacularName = "ಭೂಗೋಳಶಾಸ್ತ್ರ ಮತ್ತು ಅರ್ಥಶಾಸ್ತ್ರ",
+        iconName = "general_science",
+        colorHex = 0xFF059669,
+        description = "Karnataka & Indian physical geography, RBI, NITI Aayog, and GST for KPSC"
+    ),
+    KPSC_KANNADA(
+        id = "kpsc_kannada",
+        displayName = "General Kannada",
+        vernacularName = "ಸಾಮಾನ್ಯ ಕನ್ನಡ",
+        iconName = "kannada",
+        colorHex = 0xFF2196F3,
+        description = "ಕನ್ನಡ ಸಾಹಿತ್ಯ, ಕವಿ-ಕೃತಿಗಳು, ಗಾದೆಗಳು ಮತ್ತು ನುಡಿಗಟ್ಟುಗಳು (KPSC)"
+    ),
+    KPSC_ENGLISH(
+        id = "kpsc_english",
+        displayName = "General English",
+        vernacularName = "ಸಾಮಾನ್ಯ ಇಂಗ್ಲಿಷ್",
+        iconName = "english",
+        colorHex = 0xFF4CAF50,
+        description = "English grammar, comprehension, vocabulary, synonyms, antonyms and idioms (KPSC)"
+    ),
+    KPSC_GK(
+        id = "kpsc_gk",
+        displayName = "General Knowledge",
+        vernacularName = "ಸಾಮಾನ್ಯ ಜ್ಞಾನ",
+        iconName = "gk",
+        colorHex = 0xFFF59E0B,
+        description = "ಕರ್ನಾಟಕ ಮತ್ತು ಭಾರತದ ಸಾಮಾನ್ಯ ಜ್ಞಾನ, ಪ್ರಶಸ್ತಿಗಳು ಮತ್ತು ಸಂಸ್ಥೆಗಳು (KPSC)"
+    ),
+    KPSC_SCIENCE(
+        id = "kpsc_science",
+        displayName = "General Science (Kannada)",
+        vernacularName = "ಸಾಮಾನ್ಯ ವಿಜ್ಞಾನ",
+        iconName = "science",
+        colorHex = 0xFF0EA5E9,
+        description = "ಭೌತಶಾಸ್ತ್ರ, ರಸಾಯನಶಾಸ್ತ್ರ ಮತ್ತು ಜೀವಶಾಸ್ತ್ರದ ಮೂಲಭೂತ ಅಂಶಗಳು (KPSC)"
+    ),
+    KPSC_KANNADA_GRAMMAR(
+        id = "kpsc_kannada_grammar",
+        displayName = "Kannada Grammar",
+        vernacularName = "ಕನ್ನಡ ವ್ಯಾಕರಣ",
+        iconName = "kannada",
+        colorHex = 0xFFE91E63,
+        description = "ವರ್ಣಮಾಲೆ, ಸಂಧಿ, ಸಮಾಸ, ವಿಭಕ್ತಿ ಪ್ರತ್ಯಯಗಳು, ತತ್ಸಮ-ತದ್ಭವ ಮತ್ತು ಅಲಂಕಾರಗಳು (KPSC)"
+    ),
+    KPSC_COMPUTER(
+        id = "kpsc_computer",
+        displayName = "Computer Basics",
+        vernacularName = "ಕಂಪ್ಯೂಟರ್ ಜ್ಞಾನ",
+        iconName = "computer",
+        colorHex = 0xFF06B6D4,
+        description = "ಕಂಪ್ಯೂಟರ್ ಮೂಲಭೂತ ಅಂಶಗಳು, ಎಂ.ಎಸ್. ಆಫೀಸ್, ಇಂಟರ್ನೆಟ್ ಮತ್ತು ಸೈಬರ್ ಸುರಕ್ಷತೆ (KPSC)"
     );
 
     companion object {
@@ -207,6 +319,27 @@ enum class StandardGrade(
         stage = "National Merit Scholarship (NMMS)",
         ageGroup = "13-14 Years",
         description = "National Means-cum-Merit Scholarship Exam Preparation (MAT & SAT)"
+    ),
+    TET(
+        grade = 13,
+        title = "TET",
+        stage = "Teacher Eligibility Test (KAR-TET / CTET)",
+        ageGroup = "Aspiring Teachers",
+        description = "Child Development & Pedagogy, Languages, Maths & EVS for TET Paper I & II"
+    ),
+    NET(
+        grade = 14,
+        title = "NET",
+        stage = "UGC-NET / KSET Paper 1",
+        ageGroup = "Postgraduate & Research",
+        description = "Teaching & Research Aptitude, Logical Reasoning, ICT & Higher Education"
+    ),
+    KPSC(
+        grade = 15,
+        title = "KPSC",
+        stage = "Karnataka Public Service Commission",
+        ageGroup = "Competitive Services (KAS/FDA/SDA)",
+        description = "Karnataka History, Indian Polity, Geography, Economy, Science & CSAT"
     );
 
     companion object {
@@ -214,6 +347,15 @@ enum class StandardGrade(
 
         fun fromGrade(grade: Int): StandardGrade? {
             return entries.find { it.grade == grade }
+        }
+
+        fun shortLabel(grade: Int, stdPrefix: String = "Std"): String = when (grade) {
+            11 -> "Morarji"
+            12 -> "NMMS"
+            13 -> "TET"
+            14 -> "NET"
+            15 -> "KPSC"
+            else -> "$stdPrefix $grade"
         }
     }
 }

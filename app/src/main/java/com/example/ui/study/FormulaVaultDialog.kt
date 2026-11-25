@@ -378,7 +378,7 @@ fun FormulaVaultDialog(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    listOf(0 to "All Grades", 6 to "Std 6", 7 to "Std 7", 8 to "Std 8", 9 to "Std 9", 10 to "Std 10", 11 to "Morarji", 12 to "NMMS").forEach { (std, label) ->
+                    listOf(0 to "All Grades", 6 to "Std 6", 7 to "Std 7", 8 to "Std 8", 9 to "Std 9", 10 to "Std 10", 11 to "Morarji", 12 to "NMMS", 13 to "TET", 14 to "NET", 15 to "KPSC").forEach { (std, label) ->
                         val isSelected = selectedStandard == std
                         FilterChip(
                             selected = isSelected,

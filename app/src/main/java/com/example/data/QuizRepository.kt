@@ -11,7 +11,8 @@ class QuizRepository(
     private val downloadedQuizDao: DownloadedQuizDao? = null,
     private val studentProgressDao: StudentProgressDao? = null,
     private val historicalScoreDao: HistoricalScoreDao? = null,
-    private val studentPointDao: StudentPointDao? = null
+    private val studentPointDao: StudentPointDao? = null,
+    private val kpscStudyMaterialDao: KpscStudyMaterialDao? = null
 ) {
 
     val userProfile: Flow<UserProfile?> = quizDao.getUserProfile()
@@ -31,6 +32,23 @@ class QuizRepository(
         ?: userProfile.map { it?.totalPoints ?: 0 }
     val recentPointRecords: Flow<List<StudentPointEntity>> =
         studentPointDao?.getRecentPointRecords(10) ?: flow { emit(emptyList()) }
+
+    // KPSC Study Materials & Offline Indexed Question Flows backed by Room
+    val allKpscStudyMaterials: Flow<List<KpscStudyMaterialEntity>> =
+        kpscStudyMaterialDao?.observePublishedMaterials() ?: flow { emit(emptyList()) }
+    val kpscStudyMaterialCount: Flow<Int> =
+        kpscStudyMaterialDao?.observePublishedCount() ?: flow { emit(0) }
+    val kpscSyncedQuestionCount: Flow<Int> =
+        quizQuestionDao?.getQuestionCountForStandardFlow(KpscStudyMaterialRemote.KPSC_STD_ID) ?: flow { emit(0) }
+    val kpscLastSyncedAt: Flow<Long> =
+        kpscStudyMaterialDao?.observeLastSyncedAt()?.map { it ?: 0L } ?: flow { emit(0L) }
+
+    fun getKpscStudyMaterialsForSubject(subjectId: String): Flow<List<KpscStudyMaterialEntity>> =
+        kpscStudyMaterialDao?.observeMaterialsBySubject(subjectId) ?: flow { emit(emptyList()) }
+
+    suspend fun saveKpscStudyMaterials(materials: List<KpscStudyMaterialEntity>) {
+        kpscStudyMaterialDao?.upsertMaterials(materials)
+    }
 
     fun getAllUnitProgress(): Flow<List<UnitProgress>> =
         studentProgressDao?.getAllUnitProgress() ?: quizDao.getAllUnitProgress()

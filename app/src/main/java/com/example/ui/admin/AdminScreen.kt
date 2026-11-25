@@ -483,7 +483,7 @@ fun AdminScreen(
                         }
 
                         Text(
-                            text = "Quickly expand your quiz curriculum across standards 6-10, Morarji, and NMMS by uploading spreadsheets in bulk. Supports multi-choice questions with auto-column matching, custom chapters, and difficulty grading.",
+                            text = "Quickly expand your quiz curriculum across standards 6-10, Morarji, NMMS, TET, NET, and KPSC by uploading spreadsheets in bulk. Supports multi-choice questions with auto-column matching, custom chapters, and difficulty grading.",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 17.sp
@@ -584,11 +584,14 @@ fun AdminScreen(
                                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     verticalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    listOf(6, 7, 8, 9, 10, 11, 12).forEach { stdVal ->
+                                    listOf(6, 7, 8, 9, 10, 11, 12, 13, 14, 15).forEach { stdVal ->
                                         val isSelected = qStd == stdVal
                                         val labelText = when (stdVal) {
                                             11 -> "Morarji"
                                             12 -> "NMMS"
+                                            13 -> "TET"
+                                            14 -> "NET"
+                                            15 -> "KPSC"
                                             else -> "Std $stdVal"
                                         }
                                         FilterChip(
@@ -860,7 +863,7 @@ fun AdminScreen(
                                 label = { Text("All Classes", fontSize = 11.sp) },
                                 modifier = Modifier.testTag("filter_std_all")
                             )
-                            listOf(6 to "Std 6", 7 to "Std 7", 8 to "Std 8", 9 to "Std 9", 10 to "Std 10", 11 to "Morarji", 12 to "NMMS").forEach { (std, label) ->
+                            listOf(6 to "Std 6", 7 to "Std 7", 8 to "Std 8", 9 to "Std 9", 10 to "Std 10", 11 to "Morarji", 12 to "NMMS", 13 to "TET", 14 to "NET", 15 to "KPSC").forEach { (std, label) ->
                                 FilterChip(
                                     selected = selectedStdFilter == std,
                                     onClick = { selectedStdFilter = if (selectedStdFilter == std) null else std },

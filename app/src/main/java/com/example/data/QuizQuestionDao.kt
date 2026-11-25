@@ -21,6 +21,15 @@ interface QuizQuestionDao {
     @Query("SELECT * FROM quiz_questions WHERE stdId = :stdId ORDER BY subjectId ASC, unitId ASC")
     fun getQuestionsForStandard(stdId: Int): Flow<List<QuizQuestionEntity>>
 
+    @Query("SELECT * FROM quiz_questions WHERE stdId = :stdId ORDER BY subjectId ASC, unitId ASC, id ASC")
+    suspend fun getQuestionsForStandardDirect(stdId: Int): List<QuizQuestionEntity>
+
+    @Query("SELECT COUNT(*) FROM quiz_questions WHERE stdId = :stdId")
+    fun getQuestionCountForStandardFlow(stdId: Int): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM quiz_questions WHERE stdId = :stdId")
+    suspend fun getQuestionCountForStandardDirect(stdId: Int): Int
+
     @Query("SELECT * FROM quiz_questions WHERE id = :id LIMIT 1")
     suspend fun getQuestionById(id: String): QuizQuestionEntity?
 

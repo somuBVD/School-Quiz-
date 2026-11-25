@@ -115,7 +115,7 @@ class SettingsViewModel(
     }
 
     // --- Visible Classes / Standards Preferences ---
-    val defaultVisibleStandards: Set<Int> = setOf(6, 7, 8, 9, 10, 11, 12)
+    val defaultVisibleStandards: Set<Int> = setOf(6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
 
     private val _visibleStandards = MutableStateFlow<Set<Int>>(loadVisibleStandards())
     val visibleStandards: StateFlow<Set<Int>> = _visibleStandards.asStateFlow()
@@ -125,7 +125,14 @@ class SettingsViewModel(
         return if (saved.isNullOrEmpty()) {
             defaultVisibleStandards
         } else {
-            val parsed = saved.mapNotNull { it.toIntOrNull() }.toSet()
+            var parsed = saved.mapNotNull { it.toIntOrNull() }.toSet()
+            if (!appPrefs.getBoolean("pref_migrated_tet_net_kpsc", false)) {
+                parsed = parsed + setOf(13, 14, 15)
+                appPrefs.edit()
+                    .putStringSet("pref_visible_standards", parsed.map { it.toString() }.toSet())
+                    .putBoolean("pref_migrated_tet_net_kpsc", true)
+                    .apply()
+            }
             if (parsed.isEmpty()) defaultVisibleStandards else parsed
         }
     }
@@ -135,7 +142,7 @@ class SettingsViewModel(
     }
 
     /**
-     * Toggles visibility for a specific standard (6..10, 11=Morarji, 12=NMMS).
+     * Toggles visibility for a specific standard (6..10, 11=Morarji, 12=NMMS, 13=TET, 14=NET, 15=KPSC).
      * Ensures at least one standard remains enabled.
      * Returns true if toggled successfully, false if prevented because it's the only one left.
      */

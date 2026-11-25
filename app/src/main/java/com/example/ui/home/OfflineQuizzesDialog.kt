@@ -404,10 +404,12 @@ private fun DownloadedQuizCard(
                     color = Color(0xFF4F46E5).copy(alpha = 0.12f)
                 ) {
                     Text(
-                        text = "STD ${quiz.stdId} • $subjectTitle",
+                        text = "${com.example.data.StandardGrade.shortLabel(quiz.stdId, "STD").uppercase()} • $subjectTitle",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFF4F46E5),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }

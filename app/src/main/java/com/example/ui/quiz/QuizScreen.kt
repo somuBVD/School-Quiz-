@@ -1216,6 +1216,9 @@ fun QuizResultsView(
                             val stdLabel = when (quizState.stdId) {
                                 11 -> "Morarji"
                                 12 -> "NMMS"
+                                13 -> "TET"
+                                14 -> "NET"
+                                15 -> "KPSC"
                                 else -> "Standard ${quizState.stdId}"
                             }
                             Text(

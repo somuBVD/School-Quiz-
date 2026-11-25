@@ -11,6 +11,7 @@ import androidx.room.PrimaryKey
     tableName = "quiz_questions",
     indices = [
         Index(value = ["stdId", "subjectId", "unitId"]),
+        Index(value = ["stdId", "subjectId", "createdAt"]),
         Index(value = ["type"]),
         Index(value = ["difficulty"])
     ]

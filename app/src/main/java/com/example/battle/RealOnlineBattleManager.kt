@@ -67,8 +67,19 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
 
     fun isAuthenticatedForOnlineBattle(): Boolean = NamedFirestoreProvider.currentUid(context) != null
 
+    private fun selectMaxMcqQuestions(questions: List<QuestionModel>): List<QuestionModel> {
+        val mcqOnly = questions.filter { q ->
+            q.type.equals("MCQ", ignoreCase = true) && q.options.size >= 2
+        }
+        val pool = if (mcqOnly.isNotEmpty()) mcqOnly else questions.filter { it.options.size >= 2 }
+        return pool
+            .distinctBy { it.questionText.trim().lowercase() }
+            .shuffled()
+            .take(MAX_ONLINE_BATTLE_QUESTIONS)
+    }
+
     private fun questionsToMaps(questions: List<QuestionModel>): List<Map<String, Any>> {
-        return questions.take(10).map { q ->
+        return questions.take(MAX_ONLINE_BATTLE_QUESTIONS).map { q ->
             mapOf(
                 "id" to q.id,
                 "stdId" to q.stdId,
@@ -279,7 +290,7 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
         // 2. No open room available — create a new public room as Host
         val generatedCode = (100000..999999).random().toString()
         val roomId = "battle_${now}_${(1000..9999).random()}"
-        val selectedQuestions = candidateQuestions.shuffled().take(5)
+        val selectedQuestions = selectMaxMcqQuestions(candidateQuestions)
         val p1Map = buildPlayerMap(currentUid, user)
 
         val roomMap = hashMapOf<String, Any>(
@@ -330,7 +341,7 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
         val now = System.currentTimeMillis()
         val roomCode = (100000..999999).random().toString()
         val roomId = "private_${now}_${(1000..9999).random()}"
-        val selectedQuestions = candidateQuestions.shuffled().take(5)
+        val selectedQuestions = selectMaxMcqQuestions(candidateQuestions)
         val p1Map = buildPlayerMap(currentUid, user)
 
         val roomMap = hashMapOf<String, Any>(
@@ -532,6 +543,7 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
     companion object {
         private const val TAG = "RealOnlineBattleManager"
         private const val COLLECTION_BATTLE_ROOMS = "battle_rooms"
+        const val MAX_ONLINE_BATTLE_QUESTIONS = 60
 
         @SuppressLint("StaticFieldLeak")
         @Volatile

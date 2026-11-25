@@ -281,6 +281,9 @@ fun BulkQuestionUploadDialog(
                                     val targetStdLabel = when (targetStd) {
                                         11 -> "Morarji"
                                         12 -> "NMMS"
+                                        13 -> "TET"
+                                        14 -> "NET"
+                                        15 -> "KPSC"
                                         else -> "Std $targetStd"
                                     }
                                     Text(
@@ -308,11 +311,14 @@ fun BulkQuestionUploadDialog(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    listOf(6, 7, 8, 9, 10, 11, 12).forEach { stdNum ->
+                                    listOf(6, 7, 8, 9, 10, 11, 12, 13, 14, 15).forEach { stdNum ->
                                         val isSelected = targetStd == stdNum
                                         val labelText = when (stdNum) {
                                             11 -> "Morarji"
                                             12 -> "NMMS"
+                                            13 -> "TET"
+                                            14 -> "NET"
+                                            15 -> "KPSC"
                                             else -> "Class $stdNum"
                                         }
                                         FilterChip(

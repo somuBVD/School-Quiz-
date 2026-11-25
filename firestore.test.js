@@ -337,3 +337,145 @@ describe('School Quiz Firestore Rules — Global Leaderboard (Top 10 by XP)', ()
   });
 });
 
+describe('School Quiz Firestore Rules — KPSC Study Materials', () => {
+  function makeKpscMaterialPayload(overrides = {}) {
+    return {
+      subjectId: 'kpsc_kannada',
+      unitId: 1,
+      unitName: 'ಸಾಮಾನ್ಯ ಕನ್ನಡ - ಸಾಹಿತ್ಯ',
+      title: 'KPSC General Kannada Core Notes & MCQs',
+      summary: 'Key Kannada literature and vocabulary notes for KAS/FDA/SDA.',
+      contentMarkdown: '## ಸಾಮಾನ್ಯ ಕನ್ನಡ\n- ಪ್ರಮುಖ ಕವಿಗಳು ಮತ್ತು ಕೃತಿಗಳು',
+      language: 'kn',
+      difficulty: 'Medium',
+      examTags: ['KAS', 'FDA', 'SDA'],
+      questions: [
+        {
+          id: 'kpsc_remote_kn_1',
+          unitId: 1,
+          type: 'MCQ',
+          questionText: 'ಕನ್ನಡದ ಆದಿಕವಿ ಯಾರು?',
+          options: ['ಪಂಪ', 'ರನ್ನ', 'ಪೊನ್ನ', 'ಕುಮಾರವ್ಯಾಸ'],
+          correctAnswer: 'ಪಂಪ',
+          explanation: 'ಪಂಪನನ್ನು ಕನ್ನಡದ ಆದಿಕವಿ ಎಂದು ಕರೆಯುತ್ತಾರೆ.',
+        },
+      ],
+      contentVersion: 1,
+      published: true,
+      createdAt: nowTimestamp(),
+      updatedAt: nowTimestamp(),
+      ...overrides,
+    };
+  }
+
+  it('denies unauthenticated access and blocks students from writing KPSC study materials', async () => {
+    const anonDb = dbFor(null);
+    const studentDb = dbFor('student_kpsc', { email: 'student@school.edu', email_verified: true });
+    const adminDb = dbFor('admin_uid', { email: 'somas211@gmail.com', email_verified: true });
+
+    const payload = makeKpscMaterialPayload();
+
+    await assertFails(anonDb.collection('kpsc_study_materials').doc('kpsc_kn_u1').set(payload));
+    await assertFails(anonDb.collection('kpsc_study_materials').where('published', '==', true).get());
+    await assertFails(studentDb.collection('kpsc_study_materials').doc('kpsc_kn_u1').set(payload));
+
+    // Bootstrapped admin creates a valid published KPSC study material
+    await assertSucceeds(adminDb.collection('kpsc_study_materials').doc('kpsc_kn_u1').set(payload));
+
+    // Student cannot update or delete it
+    await assertFails(
+      studentDb.collection('kpsc_study_materials').doc('kpsc_kn_u1').update({
+        contentVersion: 2,
+        updatedAt: nowTimestamp(),
+      })
+    );
+    await assertFails(studentDb.collection('kpsc_study_materials').doc('kpsc_kn_u1').delete());
+  });
+
+  it('enforces schema validation, rejects ghost id/future timestamps/mutated createdAt, and verifies Kotlin sync queries', async () => {
+    const studentDb = dbFor('student_kpsc', { email: 'student@school.edu', email_verified: true });
+    const adminDb = dbFor('admin_uid', { email: 'somas211@gmail.com', email_verified: true });
+
+    const initialCreatedAt = new Date(Date.now() - 10000);
+    const validDoc = makeKpscMaterialPayload({ createdAt: initialCreatedAt });
+
+    // Reject invalid subjectId
+    await assertFails(
+      adminDb.collection('kpsc_study_materials').doc('bad_subject').set(
+        makeKpscMaterialPayload({ subjectId: 'unknown_subject' })
+      )
+    );
+
+    // Reject ghost 'id' field in document body (Kotlin uses @DocumentId)
+    await assertFails(
+      adminDb.collection('kpsc_study_materials').doc('ghost_id').set({
+        ...validDoc,
+        id: 'ghost_id',
+      })
+    );
+
+    // Reject future updatedAt timestamp
+    await assertFails(
+      adminDb.collection('kpsc_study_materials').doc('future_ts').set(
+        makeKpscMaterialPayload({ updatedAt: new Date(Date.now() + 60000) })
+      )
+    );
+
+    // Create published Kannada material and unpublished draft Computer material
+    await assertSucceeds(adminDb.collection('kpsc_study_materials').doc('kpsc_kn_u1').set(validDoc));
+    await assertSucceeds(
+      adminDb.collection('kpsc_study_materials').doc('kpsc_comp_draft').set(
+        makeKpscMaterialPayload({
+          subjectId: 'kpsc_computer',
+          unitId: 2,
+          unitName: 'ಕಂಪ್ಯೂಟರ್ ಜ್ಞಾನ',
+          title: 'Draft Computer Basics Notes',
+          published: false,
+        })
+      )
+    );
+
+    // Admin cannot mutate createdAt during update
+    await assertFails(
+      adminDb.collection('kpsc_study_materials').doc('kpsc_kn_u1').update({
+        createdAt: nowTimestamp(),
+        updatedAt: nowTimestamp(),
+      })
+    );
+
+    // Valid partial update preserving createdAt succeeds
+    await assertSucceeds(
+      adminDb.collection('kpsc_study_materials').doc('kpsc_kn_u1').update({
+        contentVersion: 2,
+        summary: 'Updated KPSC General Kannada summary for 2026 exam cycle.',
+        updatedAt: nowTimestamp(),
+      })
+    );
+
+    // Student cannot read unpublished draft via direct get
+    await assertFails(studentDb.collection('kpsc_study_materials').doc('kpsc_comp_draft').get());
+
+    // Student unfiltered list query fails (Query Trust Test)
+    await assertFails(studentDb.collection('kpsc_study_materials').get());
+
+    // Student filtered Kotlin sync queries succeed
+    const allPublished = await assertSucceeds(
+      studentDb.collection('kpsc_study_materials').where('published', '==', true).get()
+    );
+    if (allPublished.docs.length !== 1 || allPublished.docs[0].id !== 'kpsc_kn_u1') {
+      throw new Error(`Expected 1 published KPSC doc [kpsc_kn_u1], got ${allPublished.docs.map(d => d.id)}`);
+    }
+
+    const kannadaPublished = await assertSucceeds(
+      studentDb.collection('kpsc_study_materials')
+        .where('published', '==', true)
+        .where('subjectId', '==', 'kpsc_kannada')
+        .get()
+    );
+    if (kannadaPublished.docs.length !== 1) {
+      throw new Error(`Expected 1 kpsc_kannada doc, got ${kannadaPublished.docs.length}`);
+    }
+  });
+});
+
+

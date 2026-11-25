@@ -747,7 +747,10 @@ private fun BulkFileImporterTab(
                         9 to "Class 9",
                         10 to "Class 10",
                         11 to "Morarji",
-                        12 to "NMMS"
+                        12 to "NMMS",
+                        13 to "TET",
+                        14 to "NET",
+                        15 to "KPSC"
                     )
                     standards.forEach { (stdNum, stdLabel) ->
                         FilterChip(
@@ -1557,11 +1560,19 @@ private fun FirestoreQuestionPoolTab(
                 onClick = { onStdChange(null) },
                 label = { Text("All Classes", fontSize = 11.sp) }
             )
-            listOf(6, 7, 8, 9, 10, 11, 12).forEach { std ->
+            listOf(6, 7, 8, 9, 10, 11, 12, 13, 14, 15).forEach { std ->
+                val stdLabel = when (std) {
+                    11 -> "Morarji"
+                    12 -> "NMMS"
+                    13 -> "TET"
+                    14 -> "NET"
+                    15 -> "KPSC"
+                    else -> "Class $std"
+                }
                 FilterChip(
                     selected = selectedStd == std,
                     onClick = { onStdChange(if (selectedStd == std) null else std) },
-                    label = { Text(if (std == 11) "Morarji" else if (std == 12) "NMMS" else "Class $std", fontSize = 11.sp) }
+                    label = { Text(stdLabel, fontSize = 11.sp) }
                 )
             }
         }

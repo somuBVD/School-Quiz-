@@ -142,7 +142,7 @@ fun StartupAuthScreen(
             )
 
             Text(
-                text = "Classes 6 to 10 • Morarji • NMMS Scholarship • 1 vs 1 Battles",
+                text = "Classes 6 to 10 • Morarji • NMMS • TET • NET • KPSC",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = if (isDark) Color(0xFFA5B4FC) else primaryIndigo,
@@ -437,7 +437,10 @@ fun StartupAuthScreen(
                                     9 to "Class 9",
                                     10 to "Class 10",
                                     11 to "Morarji",
-                                    12 to "NMMS"
+                                    12 to "NMMS",
+                                    13 to "TET",
+                                    14 to "NET",
+                                    15 to "KPSC"
                                 )
 
                                 Row(

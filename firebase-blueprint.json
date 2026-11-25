@@ -119,6 +119,49 @@
         "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp written via FieldValue.serverTimestamp()" }
       },
       "required": ["uid", "displayName", "standard", "xp", "updatedAt"]
+    },
+    "KpscStudyMaterial": {
+      "title": "KpscStudyMaterial",
+      "description": "KPSC exam preparation study material and synchronized MCQ quiz bundle per subject module and unit",
+      "type": "object",
+      "properties": {
+        "subjectId": {
+          "type": "string",
+          "enum": [
+            "kpsc_kannada",
+            "kpsc_english",
+            "kpsc_gk",
+            "kpsc_science",
+            "kpsc_kannada_grammar",
+            "kpsc_computer",
+            "karnataka_history",
+            "indian_polity",
+            "geography_economy",
+            "general_science",
+            "mental_ability"
+          ]
+        },
+        "unitId": { "type": "integer" },
+        "unitName": { "type": "string" },
+        "title": { "type": "string" },
+        "summary": { "type": "string" },
+        "contentMarkdown": { "type": "string" },
+        "language": { "type": "string", "enum": ["kn", "en", "bilingual"] },
+        "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"] },
+        "examTags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "questions": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "contentVersion": { "type": "integer" },
+        "published": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["subjectId", "unitId", "unitName", "title", "language", "difficulty", "contentVersion", "published", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -153,6 +196,10 @@
     "/quiz_questions/{questionId}": {
       "schema": "Question",
       "description": "Legacy/mirrored collection of custom quiz questions"
+    },
+    "/kpsc_study_materials/{materialId}": {
+      "schema": "KpscStudyMaterial",
+      "description": "KPSC exam preparation study materials and synchronized subject-module quiz bundles"
     },
     "/battle_rooms/{roomId}": {
       "schema": "BattleRoom",
