@@ -543,7 +543,7 @@ class RealOnlineBattleManager private constructor(private val context: Context) 
     companion object {
         private const val TAG = "RealOnlineBattleManager"
         private const val COLLECTION_BATTLE_ROOMS = "battle_rooms"
-        const val MAX_ONLINE_BATTLE_QUESTIONS = 60
+        const val MAX_ONLINE_BATTLE_QUESTIONS = 100
 
         @SuppressLint("StaticFieldLeak")
         @Volatile

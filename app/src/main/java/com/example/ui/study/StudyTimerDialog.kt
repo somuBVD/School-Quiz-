@@ -9,6 +9,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeDown
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -249,7 +252,7 @@ fun StudyTimerDialog(
                                 )
                             ) {
                                 Icon(
-                                    imageVector = if (isAmbiencePlaying) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                                    imageVector = if (isAmbiencePlaying) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
                                     contentDescription = if (isAmbiencePlaying) "Mute Ambience" else "Play Ambience",
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -261,7 +264,7 @@ fun StudyTimerDialog(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            items(SoundscapeType.values()) { item ->
+                            items(SoundscapeType.entries) { item ->
                                 val isSelected = activeSoundscape == item
                                 Surface(
                                     shape = RoundedCornerShape(10.dp),
@@ -304,7 +307,7 @@ fun StudyTimerDialog(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.VolumeDown,
+                                    imageVector = Icons.AutoMirrored.Filled.VolumeDown,
                                     contentDescription = "Volume",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(16.dp)

@@ -18,9 +18,11 @@ import com.example.localization.CustomLanguageSettingsProvider
 import com.example.localization.LanguageSettingsProvider
 import com.example.localization.LocaleManager
 import com.example.ui.battle.BattleArenaState
+import com.example.ui.battle.BattleInstantFeedback
 import com.example.ui.battle.BattleOpponent
 import com.example.ui.battle.BattleRoundResult
 import com.example.ui.battle.BattleStage
+import com.example.ui.battle.BattleStreamMode
 import com.example.battle.RealOnlineBattleManager
 import com.example.battle.OnlineRoomData
 import com.example.battle.OnlinePlayer
@@ -271,6 +273,7 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     private val onlineBattleManager = RealOnlineBattleManager.getInstance(application)
     private val _battleArenaState = MutableStateFlow(BattleArenaState())
     val battleArenaState: StateFlow<BattleArenaState> = _battleArenaState.asStateFlow()
+    private var battleMasterMcqPool: List<QuestionModel> = emptyList()
     private var battleTimerJob: Job? = null
     private var opponentResponseJob: Job? = null
     private var battleAdvanceJob: Job? = null
@@ -2132,53 +2135,81 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
         )
     )
 
-    private suspend fun loadMaxBattleMcqQuestions(std: Int, subjectFilter: String): List<QuestionModel> {
-        val subjects = QuizStaticData.standardsList.find { it.std == std }?.subjects ?: emptyList()
-        val rawPool = mutableListOf<QuestionModel>()
-        for (subj in subjects) {
-            if (subjectFilter == "mixed" || subj.id.equals(subjectFilter, ignoreCase = true)) {
-                for (u in subj.units) {
-                    rawPool.addAll(repository.getQuestionsForUnit(std, subj.id, u.id))
+    private suspend fun loadMaxBattleMcqQuestions(std: Int, subjectFilter: String): List<QuestionModel> =
+        kotlinx.coroutines.withContext(Dispatchers.IO) {
+            val subjects = QuizStaticData.standardsList.find { it.std == std }?.subjects ?: emptyList()
+            val rawPool = mutableListOf<QuestionModel>()
+            for (subj in subjects) {
+                if (subjectFilter == "mixed" || subj.id.equals(subjectFilter, ignoreCase = true)) {
+                    for (u in subj.units) {
+                        rawPool.addAll(repository.getQuestionsForUnit(std, subj.id, u.id))
+                    }
                 }
             }
-        }
-        if (rawPool.isEmpty()) {
-            if (subjectFilter == "mental_ability") {
-                rawPool.addAll(com.example.data.MentalAbilityData.asQuestionModels)
-            } else if (subjectFilter == "mixed") {
-                rawPool.addAll(QuizStaticData.getQuestionsForStandard(std))
-            } else {
-                rawPool.addAll(QuizStaticData.getQuestionsForSubject(std, subjectFilter))
+            if (rawPool.isEmpty()) {
+                if (subjectFilter == "mental_ability") {
+                    rawPool.addAll(com.example.data.MentalAbilityData.asQuestionModels)
+                } else if (subjectFilter == "mixed") {
+                    rawPool.addAll(QuizStaticData.getQuestionsForStandard(std))
+                } else {
+                    rawPool.addAll(QuizStaticData.getQuestionsForSubject(std, subjectFilter))
+                }
             }
-        }
-        if (rawPool.isEmpty()) {
-            rawPool.addAll(QuizStaticData.getQuestionsForStandard(std))
-        }
-        if (rawPool.isEmpty()) {
-            rawPool.addAll(QuizStaticData.coreStaticQuestions)
+            if (rawPool.isEmpty()) {
+                rawPool.addAll(QuizStaticData.getQuestionsForStandard(std))
+            }
+            if (subjectFilter == "mixed" && rawPool.size < 60) {
+                rawPool.addAll(QuizStaticData.coreStaticQuestions)
+            }
+            if (rawPool.isEmpty()) {
+                rawPool.addAll(QuizStaticData.coreStaticQuestions)
+            }
+
+            val mcqOnly = rawPool.filter { q ->
+                q.type.equals("MCQ", ignoreCase = true) && q.options.size >= 2
+            }
+            val finalPool = if (mcqOnly.isNotEmpty()) mcqOnly else rawPool.filter { it.options.size >= 2 }
+            finalPool
+                .distinctBy { it.questionText.trim().lowercase() }
+                .shuffled()
         }
 
-        val mcqOnly = rawPool.filter { q ->
-            q.type.equals("MCQ", ignoreCase = true) && q.options.size >= 2
+    private fun refreshBattleMcqPreviewCount() {
+        val std = _selectedStd.value
+        val subjectFilter = _battleArenaState.value.selectedSubject
+        viewModelScope.launch {
+            val pool = loadMaxBattleMcqQuestions(std, subjectFilter)
+            battleMasterMcqPool = pool
+            if (_battleArenaState.value.stage == BattleStage.LOBBY && _battleArenaState.value.selectedSubject == subjectFilter) {
+                _battleArenaState.value = _battleArenaState.value.copy(
+                    availableMcqPreviewCount = pool.size
+                )
+            }
         }
-        val finalPool = if (mcqOnly.isNotEmpty()) mcqOnly else rawPool.filter { it.options.size >= 2 }
-        return finalPool
-            .distinctBy { it.questionText.trim().lowercase() }
-            .shuffled()
     }
 
     fun startBattleArena() {
         battleTimerJob?.cancel()
         opponentResponseJob?.cancel()
         battleAdvanceJob?.cancel()
+        val prevMode = _battleArenaState.value.streamMode
+        val prevSubject = _battleArenaState.value.selectedSubject
         _battleArenaState.value = BattleArenaState(
             isActive = true,
-            stage = BattleStage.LOBBY
+            stage = BattleStage.LOBBY,
+            streamMode = prevMode,
+            selectedSubject = prevSubject
         )
+        refreshBattleMcqPreviewCount()
     }
 
     fun selectBattleSubject(subjectId: String) {
         _battleArenaState.value = _battleArenaState.value.copy(selectedSubject = subjectId)
+        refreshBattleMcqPreviewCount()
+    }
+
+    fun selectBattleStreamMode(mode: BattleStreamMode) {
+        _battleArenaState.value = _battleArenaState.value.copy(streamMode = mode)
     }
 
     fun findBattleMatch(roomCode: String = "") {
@@ -2425,11 +2456,11 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
                     statusMessage = "Round ${room.currentRound + 1} Result Revealed"
                 )
 
-                // Host advances round quickly (speedy 400ms visual reveal)
+                // Host advances round quickly (ultra-snappy 180ms visual reveal for online quick-fire)
                 if (isHost) {
                     battleAdvanceJob?.cancel()
                     battleAdvanceJob = viewModelScope.launch {
-                        delay(400)
+                        delay(180)
                         val totalRoundsInRoom = room.questions.size.coerceAtLeast(1)
                         val nextRound = room.currentRound + 1
                         val isOver = nextRound >= totalRoundsInRoom
@@ -2562,98 +2593,168 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
 
         viewModelScope.launch {
             val std = _selectedStd.value
-            val subjectFilter = _battleArenaState.value.selectedSubject
+            val currentState = _battleArenaState.value
+            val subjectFilter = currentState.selectedSubject
+            val selectedMode = currentState.streamMode
             val battleQuestions = if (candidateQuestionsList != null) {
                 candidateQuestionsList
                     .filter { it.options.size >= 2 }
                     .distinctBy { it.questionText.trim().lowercase() }
                     .shuffled()
+            } else if (battleMasterMcqPool.isNotEmpty() && currentState.availableMcqPreviewCount == battleMasterMcqPool.size) {
+                battleMasterMcqPool.shuffled()
             } else {
                 loadMaxBattleMcqQuestions(std, subjectFilter)
             }
-            val matchedOpponent = sampleOpponents.shuffled().first()
 
-            _battleArenaState.value = _battleArenaState.value.copy(
+            if (battleQuestions.isEmpty()) {
+                _battleArenaState.value = currentState.copy(
+                    stage = BattleStage.LOBBY,
+                    statusMessage = "No MCQ questions available for this subject yet."
+                )
+                return@launch
+            }
+
+            battleMasterMcqPool = battleQuestions
+            val matchedOpponent = sampleOpponents.shuffled().first()
+            val now = System.currentTimeMillis()
+            val perQuestionMs = 8000L
+
+            _battleArenaState.value = currentState.copy(
                 isActive = true,
                 isOnlineMatch = false,
                 isSearchingMatch = false,
                 stage = BattleStage.IN_PROGRESS,
+                streamMode = selectedMode,
                 opponent = matchedOpponent,
                 questions = battleQuestions,
+                uniquePoolSize = battleQuestions.size,
+                availableMcqPreviewCount = battleQuestions.size,
                 currentRoundIndex = 0,
-                roundSecondsRemaining = 10,
+                roundDurationMs = perQuestionMs,
+                roundTimeRemainingMs = perQuestionMs,
+                roundSecondsRemaining = (perQuestionMs / 1000L).toInt(),
+                matchTimeRemainingMs = 60_000L,
+                roundStartedAtMs = now,
+                matchStartedAtMs = now,
                 userScore = 0,
                 opponentScore = 0,
                 userStreak = 0,
+                maxUserStreak = 0,
                 opponentStreak = 0,
+                totalResponseTimeMs = 0L,
                 userSelectedAnswer = "",
                 opponentSelectedAnswer = "",
+                opponentAnswerLocked = false,
+                lastFeedback = null,
                 roundResults = emptyList(),
-                statusMessage = "Speed Battle (${battleQuestions.size} MCQs) vs ${matchedOpponent.name}"
+                statusMessage = "${selectedMode.badgeLabel} (${battleQuestions.size} Unique MCQs) vs ${matchedOpponent.name}"
             )
 
-            startLocalBattleRound()
+            if (selectedMode == BattleStreamMode.BLITZ_60S) {
+                startBlitz60sClock()
+            } else {
+                startLocalQuickFireRoundClock()
+            }
         }
     }
 
-    private fun startLocalBattleRound() {
+    private fun startBlitz60sClock() {
         battleTimerJob?.cancel()
         opponentResponseJob?.cancel()
         battleAdvanceJob?.cancel()
 
-        _battleArenaState.value = _battleArenaState.value.copy(
-            stage = BattleStage.IN_PROGRESS,
-            roundSecondsRemaining = 10,
-            userSelectedAnswer = "",
-            opponentSelectedAnswer = ""
-        )
-
-        val currQuestion = _battleArenaState.value.currentQuestion ?: return
-        val opponent = _battleArenaState.value.opponent
-
-        opponent?.let { opp ->
-            opponentResponseJob = viewModelScope.launch {
-                val delayTime = (opp.responseSpeedRangeMs.first..opp.responseSpeedRangeMs.last).random()
-                delay(delayTime)
-
-                if (_battleArenaState.value.stage == BattleStage.IN_PROGRESS && _battleArenaState.value.opponentSelectedAnswer.isEmpty()) {
-                    val willBeCorrect = Math.random() < opp.accuracy
-                    val oppAnswer = if (willBeCorrect) {
-                        currQuestion.correctAnswer
-                    } else {
-                        currQuestion.options.filter { !it.equals(currQuestion.correctAnswer, ignoreCase = true) }.randomOrNull() ?: currQuestion.correctAnswer
-                    }
-                    _battleArenaState.value = _battleArenaState.value.copy(opponentSelectedAnswer = oppAnswer)
-
-                    if (_battleArenaState.value.userSelectedAnswer.isNotEmpty()) {
-                        evaluateLocalBattleRound()
-                    }
-                }
-            }
-        }
-
         battleTimerJob = viewModelScope.launch {
-            while (_battleArenaState.value.stage == BattleStage.IN_PROGRESS) {
-                delay(1000)
-                val secs = _battleArenaState.value.roundSecondsRemaining
-                if (secs > 1) {
-                    _battleArenaState.value = _battleArenaState.value.copy(roundSecondsRemaining = secs - 1)
-                } else {
-                    _battleArenaState.value = _battleArenaState.value.copy(roundSecondsRemaining = 0)
-                    evaluateLocalBattleRound()
+            val matchEndAt = System.currentTimeMillis() + 60_000L
+            while (_battleArenaState.value.stage == BattleStage.IN_PROGRESS && !_battleArenaState.value.isOnlineMatch) {
+                val remaining = (matchEndAt - System.currentTimeMillis()).coerceAtLeast(0L)
+                val secs = ((remaining + 999L) / 1000L).toInt()
+                _battleArenaState.value = _battleArenaState.value.copy(
+                    matchTimeRemainingMs = remaining,
+                    roundTimeRemainingMs = remaining,
+                    roundSecondsRemaining = secs
+                )
+                if (remaining <= 0L) {
+                    val state = _battleArenaState.value
+                    completeLocalBattleMatch(state.userScore, state.opponentScore)
                     break
                 }
+                delay(50L)
             }
         }
     }
 
+    private fun startLocalQuickFireRoundClock() {
+        battleTimerJob?.cancel()
+        opponentResponseJob?.cancel()
+        battleAdvanceJob?.cancel()
+
+        val stateAtStart = _battleArenaState.value
+        val currQuestion = stateAtStart.currentQuestion ?: return
+        val roundDuration = stateAtStart.roundDurationMs.coerceAtLeast(5000L)
+        val roundStart = System.currentTimeMillis()
+
+        // Background AI rival lock-in indicator (never blocks player from answering faster!)
+        stateAtStart.opponent?.let { opp ->
+            opponentResponseJob = viewModelScope.launch {
+                val delayTime = (opp.responseSpeedRangeMs.first..opp.responseSpeedRangeMs.last).random()
+                delay(delayTime)
+                val live = _battleArenaState.value
+                if (live.stage == BattleStage.IN_PROGRESS && live.currentRoundIndex == stateAtStart.currentRoundIndex && live.opponentSelectedAnswer.isEmpty()) {
+                    val willBeCorrect = Math.random() < opp.accuracy
+                    val oppAnswer = if (willBeCorrect) {
+                        currQuestion.correctAnswer
+                    } else {
+                        currQuestion.options.filter { !it.equals(currQuestion.correctAnswer, ignoreCase = true) }
+                            .randomOrNull() ?: currQuestion.correctAnswer
+                    }
+                    _battleArenaState.value = live.copy(
+                        opponentSelectedAnswer = oppAnswer,
+                        opponentAnswerLocked = true
+                    )
+                }
+            }
+        }
+
+        // Smooth 50ms high-frequency countdown clock for instant visual urgency
+        battleTimerJob = viewModelScope.launch {
+            val roundEndAt = roundStart + roundDuration
+            while (_battleArenaState.value.stage == BattleStage.IN_PROGRESS && _battleArenaState.value.currentRoundIndex == stateAtStart.currentRoundIndex) {
+                val remaining = (roundEndAt - System.currentTimeMillis()).coerceAtLeast(0L)
+                val secs = ((remaining + 999L) / 1000L).toInt()
+                _battleArenaState.value = _battleArenaState.value.copy(
+                    roundTimeRemainingMs = remaining,
+                    roundSecondsRemaining = secs
+                )
+                if (remaining <= 0L) {
+                    resolveZeroDelayLocalTurn(submittedAnswer = "", skipped = false)
+                    break
+                }
+                delay(50L)
+            }
+        }
+    }
+
+    private fun ensureInfiniteMcqBuffer(currentQuestions: List<QuestionModel>, nextIndex: Int): List<QuestionModel> {
+        if (nextIndex < currentQuestions.size - 3 || battleMasterMcqPool.isEmpty()) {
+            return currentQuestions
+        }
+        val lastQuestionText = currentQuestions.lastOrNull()?.questionText?.trim()?.lowercase()
+        val nextBatch = battleMasterMcqPool.shuffled().toMutableList()
+        if (nextBatch.size > 1 && nextBatch.first().questionText.trim().lowercase() == lastQuestionText) {
+            val first = nextBatch.removeAt(0)
+            nextBatch.add(first)
+        }
+        return currentQuestions + nextBatch
+    }
+
     fun submitBattleAnswer(answer: String) {
         val curr = _battleArenaState.value
-        if (curr.userSelectedAnswer.isNotEmpty() || curr.stage != BattleStage.IN_PROGRESS) return
-
-        _battleArenaState.value = curr.copy(userSelectedAnswer = answer)
+        if (curr.stage != BattleStage.IN_PROGRESS) return
 
         if (curr.isOnlineMatch) {
+            if (curr.userSelectedAnswer.isNotEmpty()) return
+            _battleArenaState.value = curr.copy(userSelectedAnswer = answer)
             val currQ = curr.currentQuestion
             val isCorrect = currQ != null && answer.trim().equals(currQ.correctAnswer.trim(), ignoreCase = true)
             val scoreDelta = if (isCorrect) 10 else 0
@@ -2667,73 +2768,146 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
                 )
             }
         } else {
-            // Zero-delay speedy local battle: evaluate immediately on user tap without waiting for AI
-            evaluateLocalBattleRound()
+            // TRUE ZERO-DELAY QUICK-FIRE: evaluate & stream next MCQ on the exact same frame
+            resolveZeroDelayLocalTurn(submittedAnswer = answer, skipped = false)
         }
     }
 
-    private fun evaluateLocalBattleRound() {
-        battleTimerJob?.cancel()
-        opponentResponseJob?.cancel()
-        battleAdvanceJob?.cancel()
+    fun skipBattleQuestion() {
+        val curr = _battleArenaState.value
+        if (curr.isOnlineMatch || curr.stage != BattleStage.IN_PROGRESS) return
+        resolveZeroDelayLocalTurn(submittedAnswer = "", skipped = true)
+    }
 
+    private fun resolveZeroDelayLocalTurn(submittedAnswer: String, skipped: Boolean) {
         val curr = _battleArenaState.value
         if (curr.stage != BattleStage.IN_PROGRESS) return
         val question = curr.currentQuestion ?: return
 
-        val userAns = curr.userSelectedAnswer
+        opponentResponseJob?.cancel()
+        if (curr.streamMode != BattleStreamMode.BLITZ_60S) {
+            battleTimerJob?.cancel()
+        }
+
+        val now = System.currentTimeMillis()
+        val elapsedMs = if (curr.roundStartedAtMs > 0L) {
+            (now - curr.roundStartedAtMs).coerceIn(120L, curr.roundDurationMs)
+        } else {
+            1500L
+        }
+
         var oppAns = curr.opponentSelectedAnswer
         if (oppAns.isEmpty()) {
-            val willBeCorrect = Math.random() < (curr.opponent?.accuracy ?: 0.75f)
+            val oppAcc = curr.opponent?.accuracy ?: 0.78f
+            val willBeCorrect = Math.random() < oppAcc
             oppAns = if (willBeCorrect) {
                 question.correctAnswer
             } else {
-                question.options.filter { !it.equals(question.correctAnswer, ignoreCase = true) }.randomOrNull() ?: question.correctAnswer
+                question.options.filter { !it.equals(question.correctAnswer, ignoreCase = true) }
+                    .randomOrNull() ?: question.correctAnswer
             }
         }
 
-        val userCorrect = userAns.trim().equals(question.correctAnswer.trim(), ignoreCase = true)
+        val userCorrect = !skipped && submittedAnswer.isNotBlank() &&
+            submittedAnswer.trim().equals(question.correctAnswer.trim(), ignoreCase = true)
         val oppCorrect = oppAns.trim().equals(question.correctAnswer.trim(), ignoreCase = true)
 
-        val userPts = if (userCorrect) 10 + (if (curr.roundSecondsRemaining >= 6) 10 else 5) else 0
-        val oppPts = if (oppCorrect) 10 + (if (curr.roundSecondsRemaining >= 4) 10 else 5) else 0
+        val newUserStreak = if (userCorrect) curr.userStreak + 1 else 0
+        val newMaxStreak = maxOf(curr.maxUserStreak, newUserStreak)
+        val newOppStreak = if (oppCorrect) curr.opponentStreak + 1 else 0
+
+        val speedBonus = when {
+            !userCorrect -> 0
+            elapsedMs <= 2000L -> 15
+            elapsedMs <= 4500L -> 10
+            else -> 5
+        }
+        val streakBonus = if (userCorrect && newUserStreak >= 3) 5 else 0
+        val userPts = if (userCorrect) 10 + speedBonus + streakBonus else 0
+        val oppPts = if (oppCorrect) 10 + (if (elapsedMs > 2500L) 10 else 5) else 0
 
         val newUserScore = curr.userScore + userPts
         val newOppScore = curr.opponentScore + oppPts
-        val newUserStreak = if (userCorrect) curr.userStreak + 1 else 0
-        val newOppStreak = if (oppCorrect) curr.opponentStreak + 1 else 0
 
         val roundResult = BattleRoundResult(
             roundNumber = curr.currentRoundIndex + 1,
             question = question,
-            userSelectedAnswer = userAns,
+            userSelectedAnswer = submittedAnswer,
             opponentSelectedAnswer = oppAns,
             userCorrect = userCorrect,
             opponentCorrect = oppCorrect,
             userRoundScore = userPts,
-            opponentRoundScore = oppPts
+            opponentRoundScore = oppPts,
+            responseTimeMs = elapsedMs
         )
 
+        val feedback = BattleInstantFeedback(
+            roundNumber = curr.currentRoundIndex + 1,
+            userCorrect = userCorrect,
+            opponentCorrect = oppCorrect,
+            pointsEarned = userPts,
+            speedBonus = speedBonus + streakBonus,
+            responseMs = elapsedMs,
+            correctAnswer = question.correctAnswer,
+            skipped = skipped,
+            timestampMs = now
+        )
+
+        val nextIdx = curr.currentRoundIndex + 1
+        val isEndlessStream = curr.streamMode == BattleStreamMode.INFINITE || curr.streamMode == BattleStreamMode.BLITZ_60S
+        val updatedQuestions = if (isEndlessStream) {
+            ensureInfiniteMcqBuffer(curr.questions, nextIdx)
+        } else {
+            curr.questions
+        }
+
+        val reachedEndOfMarathon = !isEndlessStream && nextIdx >= updatedQuestions.size
+
+        if (reachedEndOfMarathon) {
+            _battleArenaState.value = curr.copy(
+                userScore = newUserScore,
+                opponentScore = newOppScore,
+                userStreak = newUserStreak,
+                maxUserStreak = newMaxStreak,
+                opponentStreak = newOppStreak,
+                totalResponseTimeMs = curr.totalResponseTimeMs + elapsedMs,
+                lastFeedback = feedback,
+                roundResults = curr.roundResults + roundResult
+            )
+            viewModelScope.launch {
+                completeLocalBattleMatch(newUserScore, newOppScore)
+            }
+            return
+        }
+
+        // Atomic 0ms instant swap directly to the next MCQ — ZERO input lockout!
+        val nextDuration = curr.roundDurationMs
         _battleArenaState.value = curr.copy(
-            stage = BattleStage.ROUND_REVEAL,
+            stage = BattleStage.IN_PROGRESS,
+            questions = updatedQuestions,
+            currentRoundIndex = nextIdx,
+            roundTimeRemainingMs = if (curr.streamMode == BattleStreamMode.BLITZ_60S) curr.matchTimeRemainingMs else nextDuration,
+            roundSecondsRemaining = if (curr.streamMode == BattleStreamMode.BLITZ_60S) {
+                ((curr.matchTimeRemainingMs + 999L) / 1000L).toInt()
+            } else {
+                (nextDuration / 1000L).toInt()
+            },
+            roundStartedAtMs = now,
             userScore = newUserScore,
             opponentScore = newOppScore,
             userStreak = newUserStreak,
+            maxUserStreak = newMaxStreak,
             opponentStreak = newOppStreak,
-            opponentSelectedAnswer = oppAns,
+            totalResponseTimeMs = curr.totalResponseTimeMs + elapsedMs,
+            userSelectedAnswer = "",
+            opponentSelectedAnswer = "",
+            opponentAnswerLocked = false,
+            lastFeedback = feedback,
             roundResults = curr.roundResults + roundResult
         )
 
-        // Ultra-fast 250ms feedback flash, then instant next MCQ (no sluggish pause)
-        battleAdvanceJob = viewModelScope.launch {
-            delay(250)
-            val nextIdx = curr.currentRoundIndex + 1
-            if (nextIdx < curr.totalRounds) {
-                _battleArenaState.value = _battleArenaState.value.copy(currentRoundIndex = nextIdx)
-                startLocalBattleRound()
-            } else {
-                completeLocalBattleMatch(newUserScore, newOppScore)
-            }
+        if (curr.streamMode != BattleStreamMode.BLITZ_60S) {
+            startLocalQuickFireRoundClock()
         }
     }
 
@@ -2752,13 +2926,18 @@ class QuizViewModel(application: Application, val repository: QuizRepository) : 
     }
 
     private suspend fun completeLocalBattleMatch(finalUserScore: Int, finalOppScore: Int) {
+        battleTimerJob?.cancel()
+        opponentResponseJob?.cancel()
+        battleAdvanceJob?.cancel()
         val finalWin = finalUserScore > finalOppScore
-        val roundsPlayed = _battleArenaState.value.roundResults.size
+        val state = _battleArenaState.value
+        val roundsPlayed = state.roundResults.size
+        val correctPlayed = state.correctCount
         val profile = repository.getUserProfileDirect()
         if (profile != null && roundsPlayed > 0) {
-            val addCoins = if (finalWin) 50 else 15
-            val addXP = if (finalWin) 120 else 40
-            val addStars = if (finalWin) 2 else 0
+            val addCoins = (if (finalWin) 40 else 15) + (correctPlayed * 3).coerceAtMost(120)
+            val addXP = (if (finalWin) 100 else 40) + (correctPlayed * 8).coerceAtMost(300)
+            val addStars = (if (finalWin) 2 else 1) + (correctPlayed / 10).coerceAtMost(5)
             repository.saveUserProfile(
                 profile.copy(
                     coins = profile.coins + addCoins,

@@ -201,8 +201,8 @@ data class AppStrings(
             restartDeck = "Restart Deck",
 
             settingsTitle = "Application Settings",
-            appearanceSection = "Appearance Theme (ThemeManager)",
-            appearanceDesc = "Controls the global light and dark theme mode across all screens and components.",
+            appearanceSection = "Appearance & Theme",
+            appearanceDesc = "Switch between light, dark, or device system themes across the entire app.",
             lightMode = "☀️ Light Mode",
             darkMode = "🌙 Dark Mode",
             systemMode = "⚙️ System Default",
@@ -312,8 +312,8 @@ data class AppStrings(
             restartDeck = "ಮತ್ತೆ ಪ್ರಾರಂಭಿಸಿ",
 
             settingsTitle = "ಅಪ್ಲಿಕೇಶನ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
-            appearanceSection = "ಥೀಮ್ ಮೋಡ್ (ThemeManager)",
-            appearanceDesc = "ಬೆಳಕು ಮತ್ತು ಡಾರ್ಕ್ ಮೋಡ್ ನಿಯಂತ್ರಣ.",
+            appearanceSection = "ಥೀಮ್ ಮತ್ತು ನೋಟ",
+            appearanceDesc = "ಇಡೀ ಅಪ್ಲಿಕೇಶನ್‌ನಲ್ಲಿ ಬೆಳಕು, ಡಾರ್ಕ್ ಅಥವಾ ಸಿಸ್ಟಮ್ ಥೀಮ್ ಬದಲಾಯಿಸಿ.",
             lightMode = "☀️ ಬೆಳಕಿನ ಮೋಡ್",
             darkMode = "🌙 ಡಾರ್ಕ್ ಮೋಡ್",
             systemMode = "⚙️ ಸಿಸ್ಟಮ್ ಡೀಫಾಲ್ಟ್",
@@ -423,8 +423,8 @@ data class AppStrings(
             restartDeck = "पुनः प्रारंभ करें",
 
             settingsTitle = "एप्लिकेशन सेटिंग्स",
-            appearanceSection = "थीम मोड (ThemeManager)",
-            appearanceDesc = "लाइट और डार्क मोड सेटिंग।",
+            appearanceSection = "थीम और रूप",
+            appearanceDesc = "पूरे ऐप में लाइट, डार्क या सिस्टम थीम चुनें।",
             lightMode = "☀️ लाइट मोड",
             darkMode = "🌙 डार्क मोड",
             systemMode = "⚙️ सिस्टम डिफ़ॉल्ट",

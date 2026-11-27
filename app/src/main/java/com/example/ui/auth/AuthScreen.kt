@@ -171,7 +171,7 @@ fun AuthDialog(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                UserRole.values().forEach { role ->
+                                UserRole.entries.forEach { role ->
                                     val isLocked = (role == UserRole.ADMIN && isAdminLocked) ||
                                         (role == UserRole.TEACHER && isTeacherLocked)
                                     val isSelected = selectedRole == role && !isLocked
@@ -535,7 +535,7 @@ fun AuthenticatedUserInfo(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                UserRole.values().forEach { role ->
+                UserRole.entries.forEach { role ->
                     val isLocked = (role == UserRole.TEACHER && isTeacherLocked) ||
                         (role == UserRole.ADMIN && isAdminLocked)
                     val isCurrent = user.role == role

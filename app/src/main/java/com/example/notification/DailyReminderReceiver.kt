@@ -16,8 +16,11 @@ class DailyReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
 
-        if (action == Intent.ACTION_BOOT_COMPLETED) {
-            // Reschedule daily reminder after device reboot
+        if (action == Intent.ACTION_BOOT_COMPLETED ||
+            action == Intent.ACTION_MY_PACKAGE_REPLACED ||
+            action == "android.intent.action.QUICKBOOT_POWERON"
+        ) {
+            // Reschedule daily reminder after device reboot or app update
             val settings = DailyReminderScheduler.getSettings(context)
             if (settings.isEnabled) {
                 DailyReminderScheduler.scheduleDailyReminder(

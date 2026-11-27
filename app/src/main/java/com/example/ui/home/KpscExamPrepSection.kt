@@ -30,11 +30,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.CloudDone
 import androidx.compose.material.icons.rounded.Computer
-import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material.icons.rounded.OfflinePin
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Public
@@ -116,7 +116,7 @@ fun KpscExamPrepSection(
                 subjectId = "kpsc_english",
                 titleResId = R.string.kpsc_module_english,
                 kannadaLabel = "ಸಾಮಾನ್ಯ ಇಂಗ್ಲಿಷ್",
-                icon = Icons.Rounded.MenuBook,
+                icon = Icons.AutoMirrored.Rounded.MenuBook,
                 accentColor = Color(0xFF059669)
             ),
             KpscSubModuleUi(

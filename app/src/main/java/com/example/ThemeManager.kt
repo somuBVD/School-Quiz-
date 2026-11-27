@@ -2,6 +2,7 @@ package com.example
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.res.Configuration
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,8 +26,10 @@ enum class ThemeMode {
  */
 class ThemeManager(context: Context) {
 
+    private val appContext: Context = context.applicationContext
+
     private val prefs: SharedPreferences =
-        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private val _themeMode = MutableStateFlow(loadThemeMode())
     /** Observable [StateFlow] of the current [ThemeMode] (LIGHT, DARK, SYSTEM). */
@@ -48,8 +51,13 @@ class ThemeManager(context: Context) {
         get() = _themeMode.value
 
     init {
-        // Ensure consistency between initial themeMode and isDarkMode
-        syncDarkModeWithMode(_themeMode.value, isSystemInDark = false)
+        // Ensure consistency between initial themeMode and isDarkMode without startup flash
+        syncDarkModeWithMode(_themeMode.value, isSystemInDark = isDeviceCurrentlyInDarkMode())
+    }
+
+    private fun isDeviceCurrentlyInDarkMode(): Boolean {
+        val uiMode = appContext.resources?.configuration?.uiMode ?: return false
+        return (uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
     }
 
     /**

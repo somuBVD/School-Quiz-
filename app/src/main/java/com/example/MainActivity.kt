@@ -3,9 +3,11 @@ package com.example
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -56,6 +58,7 @@ import com.example.ui.mistakes.MistakeVaultDialog
 import com.example.ui.quiz.QuizScreen
 import com.example.ui.study.StudyTimerDialog
 import com.example.ui.theme.MyApplicationTheme
+import com.example.ui.theme.SystemThemeSettingsPanel
 import com.example.ui.theme.ThemeSwitch
 import com.example.ui.theme.ThemeSwitchCard
 import com.example.ui.theme.GlobalThemeToggleButton
@@ -108,8 +111,44 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val isDark by settingsViewModel.isDarkMode.collectAsState()
+            val currentThemeMode by settingsViewModel.themeMode.collectAsState()
+            val systemInDark = isSystemInDarkTheme()
+
+            LaunchedEffect(systemInDark, currentThemeMode) {
+                if (currentThemeMode == ThemeMode.SYSTEM) {
+                    settingsViewModel.updateSystemDark(systemInDark)
+                }
+            }
+
+            DisposableEffect(isDark) {
+                enableEdgeToEdge(
+                    statusBarStyle = if (isDark) {
+                        SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                    } else {
+                        SystemBarStyle.light(
+                            android.graphics.Color.TRANSPARENT,
+                            android.graphics.Color.TRANSPARENT
+                        )
+                    },
+                    navigationBarStyle = if (isDark) {
+                        SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                    } else {
+                        SystemBarStyle.light(
+                            android.graphics.Color.TRANSPARENT,
+                            android.graphics.Color.TRANSPARENT
+                        )
+                    }
+                )
+                onDispose {}
+            }
+
             MyApplicationTheme(darkTheme = isDark) {
-                MainContentNavigator(viewModel = viewModel, settingsViewModel = settingsViewModel)
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    MainContentNavigator(viewModel = viewModel, settingsViewModel = settingsViewModel)
+                }
             }
         }
     }
@@ -367,6 +406,13 @@ fun MainContentNavigator(
                                         }
                                     }
                                 }
+
+                                // Quick System-Wide Light/Dark Mode Toggle
+                                GlobalThemeToggleButton(
+                                    isDark = isDark,
+                                    onToggle = { settingsViewModel.toggleDarkMode() },
+                                    modifier = Modifier.size(36.dp)
+                                )
 
                                 // Settings Icon Button
                                 IconButton(
@@ -761,7 +807,7 @@ fun MainContentNavigator(
                                 Text("⚙️", fontSize = 20.sp)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Application Settings",
+                                    text = strings.settingsTitle,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 18.sp
                                 )
@@ -913,97 +959,17 @@ fun MainContentNavigator(
 
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-                                // Theme Section
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(
-                                        text = "Appearance Theme (ThemeManager)",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    Text(
-                                        text = "Controls the global light and dark theme mode across all screens and components.",
-                                        fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-
-                                    // Dedicated persistent ThemeSwitchCard for instant light/dark toggle
-                                    ThemeSwitchCard(
-                                        settingsViewModel = settingsViewModel,
-                                        modifier = Modifier.testTag("settings_theme_switch_card")
-                                    )
-
-                                    // Theme choices: Light, Dark, System
-                                    val themeOptions = listOf(
-                                        Triple(ThemeMode.LIGHT, "☀️ Light Mode", "Bright, high-contrast palette"),
-                                        Triple(ThemeMode.DARK, "🌙 Dark Mode", "Deep slate, battery-saving palette"),
-                                        Triple(ThemeMode.SYSTEM, "⚙️ System Default", "Follows your device system theme")
-                                    )
-
-                                    themeOptions.forEach { (mode, title, desc) ->
-                                        val isSelected = themeMode == mode
-                                        Card(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable {
-                                                    settingsViewModel.setThemeMode(mode, systemInDark)
-                                                }
-                                                .testTag("theme_option_${mode.name.lowercase()}"),
-                                            shape = RoundedCornerShape(12.dp),
-                                            colors = CardDefaults.cardColors(
-                                                containerColor = if (isSelected)
-                                                    MaterialTheme.colorScheme.primaryContainer
-                                                else
-                                                    MaterialTheme.colorScheme.surfaceVariant
-                                            ),
-                                            border = if (isSelected)
-                                                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-                                            else
-                                                null
-                                        ) {
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(12.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.SpaceBetween
-                                            ) {
-                                                Column(modifier = Modifier.weight(1f)) {
-                                                    Text(
-                                                        text = title,
-                                                        fontWeight = FontWeight.Bold,
-                                                        fontSize = 13.sp,
-                                                        color = if (isSelected)
-                                                            MaterialTheme.colorScheme.onPrimaryContainer
-                                                        else
-                                                            MaterialTheme.colorScheme.onSurface
-                                                    )
-                                                    Text(
-                                                        text = desc,
-                                                        fontSize = 11.sp,
-                                                        color = if (isSelected)
-                                                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                                        else
-                                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                }
-                                                RadioButton(
-                                                    selected = isSelected,
-                                                    onClick = {
-                                                        settingsViewModel.setThemeMode(mode, systemInDark)
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
+                                // System-Wide Appearance & Theme Section
+                                SystemThemeSettingsPanel(
+                                    settingsViewModel = settingsViewModel
+                                )
 
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                                 // Preferences Section
                                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Text(
-                                        text = "Quiz Feedback (SettingsViewModel)",
+                                        text = "Quiz Feedback",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp,
                                         color = MaterialTheme.colorScheme.primary
@@ -1016,12 +982,12 @@ fun MainContentNavigator(
                                     ) {
                                         Column {
                                             Text(
-                                                text = "Sound Effects",
+                                                text = strings.soundEffects,
                                                 fontWeight = FontWeight.SemiBold,
                                                 fontSize = 13.sp
                                             )
                                             Text(
-                                                text = "Audio cues for answers & completions",
+                                                text = strings.soundEffectsDesc,
                                                 fontSize = 11.sp,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
@@ -1039,12 +1005,12 @@ fun MainContentNavigator(
                                     ) {
                                         Column {
                                             Text(
-                                                text = "Haptic Vibration",
+                                                text = strings.hapticVibration,
                                                 fontWeight = FontWeight.SemiBold,
                                                 fontSize = 13.sp
                                             )
                                             Text(
-                                                text = "Vibrate on quiz responses",
+                                                text = strings.hapticVibrationDesc,
                                                 fontSize = 11.sp,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )

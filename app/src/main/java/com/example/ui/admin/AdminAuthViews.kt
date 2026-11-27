@@ -955,7 +955,7 @@ fun FacultyHeaderBar(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    UserRole.values().forEach { r ->
+                    UserRole.entries.forEach { r ->
                         val isLocked = (r == UserRole.TEACHER && FirebaseAuthManager.IS_TEACHER_AUTH_LOCKED) ||
                             (r == UserRole.ADMIN && FirebaseAuthManager.IS_ADMIN_AUTH_LOCKED)
                         val isActive = role == r

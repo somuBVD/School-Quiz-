@@ -66,4 +66,21 @@
     <string name="kpsc_sync_syncing">Syncing KPSC content…</string>
     <string name="kpsc_sync_action">Sync</string>
     <string name="kpsc_sync_cd">Sync KPSC study materials and quizzes for offline access</string>
+    <string name="battle_quickfire_badge">ZERO-DELAY QUICK-FIRE 1v1</string>
+    <string name="battle_quickfire_title">High-Speed MCQ Stream Arena</string>
+    <string name="battle_quickfire_subtitle">Instant tap-to-next flow • Infinite &amp; Maximized MCQ decks • Live speed telemetry</string>
+    <string name="battle_launch_cta">START ZERO-DELAY DUEL</string>
+    <string name="battle_end_and_claim">Finish &amp; Claim</string>
+    <string name="battle_skip_question">Skip</string>
+    <string name="battle_mode_section_title">Select Speed Mode</string>
+    <string name="battle_subject_section_title">Choose Battle Subject</string>
+    <string name="theme_mode_light">Light</string>
+    <string name="theme_mode_dark">Dark</string>
+    <string name="theme_mode_system">System</string>
+    <string name="theme_dark_active">Dark Mode</string>
+    <string name="theme_light_active">Light Mode</string>
+    <string name="theme_dark_subtitle">Deep slate palette for low-light comfort</string>
+    <string name="theme_light_subtitle">Crisp high-contrast daylight palette</string>
+    <string name="theme_auto_badge">AUTO</string>
+    <string name="theme_selected_cd">Selected theme</string>
 </resources>
